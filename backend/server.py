@@ -413,7 +413,7 @@ async def get_dashboard(project_id: str, request: Request):
     invoices = await notion_query("invoice", {"property": "Project", "relation": {"contains": project_id}})
     inv_list = [parse_page(i, INVOICE_PROPS) for i in invoices]
     total_billed = sum(i.get("amount") or 0 for i in inv_list)
-    total_paid = sum(i.get("amount") or 0 for i in inv_list if i.get("payment_status") == "Paid")
+    total_paid = sum(i.get("amount") or 0 for i in inv_list if i.get("payment_status") == "Paid" or (i.get("paid") and not i.get("payment_status")))
 
     return {
         "project": project, "recent_updates": recent,
@@ -447,7 +447,7 @@ async def get_billing(project_id: str, request: Request):
     pages = await notion_query("invoice", {"property": "Project", "relation": {"contains": project_id}})
     invoices = [parse_page(p, INVOICE_PROPS) for p in pages]
     total_billed = sum(i.get("amount") or 0 for i in invoices)
-    total_paid = sum(i.get("amount") or 0 for i in invoices if i.get("payment_status") == "Paid")
+    total_paid = sum(i.get("amount") or 0 for i in invoices if i.get("payment_status") == "Paid" or (i.get("paid") and not i.get("payment_status")))
     return {"invoices": invoices, "summary": {"total_billed": total_billed, "total_paid": total_paid, "outstanding": total_billed - total_paid}}
 
 
@@ -545,8 +545,8 @@ async def admin_billing(request: Request):
     require_admin(user)
     pages = await notion_query("invoice")
     invoices = [parse_page(p, INVOICE_PROPS) for p in pages]
-    outstanding = [i for i in invoices if i.get("payment_status") in ("Sent", "Overdue")]
-    paid = [i for i in invoices if i.get("payment_status") == "Paid"]
+    outstanding = [i for i in invoices if i.get("payment_status") in ("Sent", "Overdue") or (not i.get("paid") and i.get("amount") and i.get("payment_status") not in ("Paid", "Draft", "Cancelled"))]
+    paid = [i for i in invoices if i.get("payment_status") == "Paid" or (i.get("paid") and i.get("payment_status") not in ("Sent", "Overdue"))]
     total = sum(i.get("amount") or 0 for i in invoices)
     total_paid = sum(i.get("amount") or 0 for i in paid)
     return {"invoices": invoices, "outstanding": outstanding, "recent_paid": paid,
