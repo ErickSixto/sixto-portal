@@ -19,7 +19,6 @@ async function api(path, options = {}) {
 
   const res = await fetch(`${API}${path}`, {
     ...options,
-    credentials: 'include',
     headers,
   });
 

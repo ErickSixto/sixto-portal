@@ -251,12 +251,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Sixto Portal API", lifespan=lifespan)
 
-origins = [os.environ.get("FRONTEND_URL", "http://localhost:3000")]
+origins = [
+    os.environ.get("FRONTEND_URL", "http://localhost:3000"),
+    "http://localhost:3000",
+    "http://localhost:8001",
+]
 app_url = os.environ.get("APP_URL", "")
 if app_url:
     origins.append(app_url)
+# Also allow the same domain without/with trailing slash
+frontend_url = os.environ.get("FRONTEND_URL", "")
+if frontend_url:
+    origins.append(frontend_url.rstrip("/"))
 
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
 
 
 class MagicLinkRequest(BaseModel):
