@@ -287,31 +287,41 @@ function MeetingCard({ meeting }) {
 /* ─── TASKS TAB ─── */
 const phaseOrder = ['Getting Started', 'Planning', 'Implementation', 'Offboarding'];
 const taskStatusConfig = {
-  'Not Started': { icon: Circle, color: 'text-warm-500' },
-  'In progress': { icon: AlertCircle, color: 'text-accent' },
-  'Done': { icon: CheckCircle2, color: 'text-green-400' },
-  'Blocked': { icon: XCircle, color: 'text-red-400' },
-  "Won't Do": { icon: MinusCircle, color: 'text-warm-600' },
+  'Not Started': { icon: Circle, color: 'text-warm-500', bg: 'bg-warm-500/15' },
+  'In progress': { icon: AlertCircle, color: 'text-accent', bg: 'bg-accent/15' },
+  'Done': { icon: CheckCircle2, color: 'text-green-400', bg: 'bg-green-500/15' },
+  'Blocked': { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/15' },
+  "Won't Do": { icon: MinusCircle, color: 'text-warm-600', bg: 'bg-warm-600/15' },
 };
 const priorityColors = {
   'High': 'bg-red-500/15 text-red-400 border-red-500/20',
   'Medium': 'bg-accent/15 text-accent border-accent/20',
   'Low': 'bg-blue-500/15 text-blue-400 border-blue-500/20',
 };
+const priorityWeight = { 'High': 0, 'Medium': 1, 'Low': 2 };
+const statusWeight = { 'Blocked': 0, 'In progress': 1, 'Not Started': 2, 'Done': 3, "Won't Do": 4 };
 
-function TaskRow({ task }) {
+function TaskRow({ task, isExpanded, onToggle }) {
   const cfg = taskStatusConfig[task.status] || taskStatusConfig['Not Started'];
   const Icon = cfg.icon;
   const isWontDo = task.status === "Won't Do";
-  const [expanded, setExpanded] = useState(false);
+  const hasDetail = task.notes || (task.files && task.files.length > 0) || (task.assignee && task.assignee.length > 0);
+
   return (
     <div data-testid={`task-${task.id}`} className={isWontDo ? 'opacity-50' : ''}>
-      <div className="flex items-center gap-3 p-3.5 bg-dark-700 rounded-xl border border-dark-500/40 hover:border-dark-400 transition-colors cursor-pointer" onClick={() => task.notes && setExpanded(!expanded)}>
+      <div
+        className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+          isExpanded
+            ? 'bg-dark-600 border-accent/30 shadow-lg shadow-accent/5'
+            : 'bg-dark-700 border-dark-500/40 hover:border-dark-400'
+        }`}
+        onClick={onToggle}
+      >
         <Icon size={16} className={cfg.color} />
         <div className="flex-1 min-w-0">
           <div className={`text-sm text-warm-100 ${isWontDo ? 'line-through' : ''}`}>{task.name}</div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            {task.tag && <span className="text-[10px] bg-dark-600 px-1.5 py-0.5 rounded text-warm-400">{task.tag}</span>}
+            {task.tag && <span className="text-[10px] bg-dark-500 px-1.5 py-0.5 rounded text-warm-400">{task.tag}</span>}
             {task.due_date && <span className="text-[10px] text-warm-500">{task.due_date?.start || task.due_date}</span>}
           </div>
         </div>
@@ -319,61 +329,165 @@ function TaskRow({ task }) {
           {task.priority && (
             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${priorityColors[task.priority] || 'bg-dark-600 text-warm-400 border-dark-400'}`}>{task.priority}</span>
           )}
-          {task.notes && (expanded ? <ChevronDown size={12} className="text-warm-500" /> : <ChevronRight size={12} className="text-warm-500" />)}
+          {isExpanded ? <ChevronDown size={14} className="text-warm-400" /> : <ChevronRight size={14} className="text-warm-500" />}
         </div>
       </div>
-      {expanded && task.notes && (
-        <div className="ml-8 mt-1 p-3 bg-dark-800 rounded-lg border border-dark-500/30">
-          <p className="text-xs text-warm-400 whitespace-pre-line">{task.notes}</p>
+      {isExpanded && (
+        <div className="mt-1 ml-4 mr-1 p-4 bg-dark-800 rounded-xl border border-dark-500/30 space-y-3 animate-fadeIn">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${cfg.bg} ${cfg.color}`}>
+              <Icon size={10} /> {task.status}
+            </span>
+            {task.priority && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${priorityColors[task.priority]}`}>{task.priority} Priority</span>
+            )}
+            {task.tag && <span className="text-[10px] bg-dark-600 px-2 py-0.5 rounded text-warm-400">{task.tag}</span>}
+          </div>
+          {task.notes ? (
+            <div>
+              <div className="text-[10px] font-semibold text-warm-500 uppercase tracking-wider mb-1">Description</div>
+              <p className="text-xs text-warm-300 whitespace-pre-line leading-relaxed">{task.notes}</p>
+            </div>
+          ) : (
+            <p className="text-xs text-warm-600 italic">No description provided.</p>
+          )}
+          <div className="flex items-center gap-4 text-[10px] text-warm-500 pt-1 border-t border-dark-500/30">
+            {task.due_date && <span>Due: {task.due_date?.start || task.due_date}</span>}
+            {task.assignee && task.assignee.length > 0 && (
+              <span className="flex items-center gap-1"><Users size={10} /> {task.assignee.map(a => a.name).join(', ')}</span>
+            )}
+          </div>
+          {task.files && task.files.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {task.files.map((f, i) => (
+                <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent-light font-medium">
+                  <Download size={12} /> {f.name || 'File'}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
+const STATUS_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'In progress', label: 'In Progress' },
+  { key: 'Done', label: 'Completed' },
+  { key: 'Not Started', label: 'Not Started' },
+  { key: 'Blocked', label: 'Blocked' },
+];
+const SORT_OPTIONS = [
+  { key: 'default', label: 'Default' },
+  { key: 'priority', label: 'Priority' },
+  { key: 'due_date', label: 'Due Date' },
+  { key: 'status', label: 'Status' },
+];
+
 function TasksTab({ projectId }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('default');
+  const [expandedId, setExpandedId] = useState(null);
+
   useEffect(() => {
     api(`/api/portal/project/${projectId}/tasks`).then(setTasks).catch(console.error).finally(() => setLoading(false));
   }, [projectId]);
+
   if (loading) return <Spinner />;
   if (tasks.length === 0) return <EmptyState text="No tasks available." icon={ListChecks} />;
 
-  const grouped = {};
-  phaseOrder.forEach(p => { grouped[p] = []; });
-  const ungrouped = [];
-  tasks.forEach(t => {
-    const phase = t.phase;
-    if (phase && grouped[phase]) grouped[phase].push(t);
-    else ungrouped.push(t);
-  });
-  const totalDone = tasks.filter(t => t.status === 'Done').length;
-  const hasPhases = phaseOrder.some(p => grouped[p].length > 0);
+  const filtered = statusFilter === 'all' ? tasks : tasks.filter(t => t.status === statusFilter);
 
-  const renderGroup = (label, items) => {
-    if (items.length === 0) return null;
-    const done = items.filter(t => t.status === 'Done').length;
-    const pct = Math.round((done / items.length) * 100);
-    return (
-      <div key={label} data-testid={`phase-${label.toLowerCase().replace(/\s/g, '-')}`}>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-warm-100">{label}</h2>
-          <span className="text-[10px] text-warm-500">{done}/{items.length} ({pct}%)</span>
-        </div>
-        <div className="w-full bg-dark-600 rounded-full h-1 mb-3">
-          <div className="bg-accent h-1 rounded-full transition-all" style={{ width: `${pct}%` }} />
-        </div>
-        <div className="space-y-1.5">{items.map(t => <TaskRow key={t.id} task={t} />)}</div>
-      </div>
-    );
-  };
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'priority') return (priorityWeight[a.priority] ?? 3) - (priorityWeight[b.priority] ?? 3);
+    if (sortBy === 'due_date') {
+      const da = a.due_date?.start || 'z';
+      const db = b.due_date?.start || 'z';
+      return da.localeCompare(db);
+    }
+    if (sortBy === 'status') return (statusWeight[a.status] ?? 5) - (statusWeight[b.status] ?? 5);
+    return 0;
+  });
+
+  const totalDone = tasks.filter(t => t.status === 'Done').length;
+  const filteredDone = filtered.filter(t => t.status === 'Done').length;
+  const progress = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
+
+  // Count per status for filter badges
+  const statusCounts = {};
+  tasks.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
 
   return (
-    <div className="space-y-6">
-      <p className="text-warm-500 text-xs">{totalDone} of {tasks.length} tasks completed</p>
-      {hasPhases && phaseOrder.map(phase => renderGroup(phase, grouped[phase]))}
-      {ungrouped.length > 0 && renderGroup(hasPhases ? 'Other' : 'All Tasks', ungrouped)}
+    <div data-testid="tasks-tab" className="space-y-5">
+      {/* Summary bar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <span className="text-warm-200 text-sm font-medium">{totalDone}/{tasks.length} completed</span>
+          <span className="text-warm-500 text-xs ml-2">({progress}%)</span>
+        </div>
+        <div className="w-48 bg-dark-600 rounded-full h-1.5">
+          <div className="bg-accent h-1.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      {/* Filters + Sort */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap" data-testid="task-status-filters">
+          {STATUS_FILTERS.map(f => {
+            const count = f.key === 'all' ? tasks.length : (statusCounts[f.key] || 0);
+            if (f.key !== 'all' && count === 0) return null;
+            const active = statusFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                data-testid={`filter-${f.key}`}
+                onClick={() => { setStatusFilter(f.key); setExpandedId(null); }}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                  active
+                    ? 'bg-accent/15 text-accent border border-accent/30'
+                    : 'bg-dark-700 text-warm-400 border border-dark-500/40 hover:text-warm-200 hover:border-dark-400'
+                }`}
+              >
+                {f.label}
+                <span className={`ml-1.5 ${active ? 'text-accent/70' : 'text-warm-600'}`}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-2" data-testid="task-sort">
+          <span className="text-[10px] text-warm-500 uppercase tracking-wider">Sort</span>
+          <select
+            data-testid="sort-select"
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className="px-2.5 py-1.5 bg-dark-700 border border-dark-500/40 rounded-lg text-[11px] text-warm-200 focus:outline-none focus:border-accent/40"
+          >
+            {SORT_OPTIONS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Task list */}
+      {sorted.length === 0 ? (
+        <div className="bg-dark-700 rounded-xl p-10 border border-dark-500/50 text-center">
+          <p className="text-warm-500 text-sm">No tasks match this filter.</p>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {sorted.map(t => (
+            <TaskRow
+              key={t.id}
+              task={t}
+              isExpanded={expandedId === t.id}
+              onToggle={() => setExpandedId(expandedId === t.id ? null : t.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
