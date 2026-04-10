@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api';
+import { BRAND_LOGO_DARK } from '../brandAssets';
 import { useNavigate } from 'react-router-dom';
 import { Folder, ArrowRight, Calendar, LogOut, Search, X, CheckCircle2, MessageSquare } from 'lucide-react';
 
@@ -155,7 +156,7 @@ export default function ProjectsPage() {
       <header className="border-b border-dark-500/50 bg-dark-950/80 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo-dark.png" alt="ES" className="w-8 h-8 rounded-md" />
+            <img src={BRAND_LOGO_DARK} alt="ES" className="w-8 h-8 rounded-md" />
             <div>
               <div className="text-warm-50 text-sm font-semibold">Erick Sixto</div>
               <div className="text-warm-500 text-[10px] uppercase tracking-widest">Project Portal</div>

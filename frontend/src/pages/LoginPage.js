@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { BRAND_LOGO_DARK } from '../brandAssets';
 import { ArrowRight, Copy, Check } from 'lucide-react';
 
 export default function LoginPage() {
@@ -53,7 +54,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-dark-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/logo-dark.png" alt="ES" className="w-14 h-14 mx-auto mb-4 rounded-xl" />
+          <img src={BRAND_LOGO_DARK} alt="ES" className="w-14 h-14 mx-auto mb-4 rounded-xl" />
           <h1 className="text-xl font-bold text-warm-50 tracking-tight">Erick Sixto</h1>
           <p className="text-warm-500 text-xs mt-1 uppercase tracking-widest">Project Portal</p>
         </div>

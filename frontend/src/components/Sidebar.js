@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { BRAND_LOGO_DARK } from '../brandAssets';
 import {
   BarChart3, Layers, Users, CreditCard, Settings, Shield,
   LogOut, Menu, X, Folder
@@ -45,7 +46,7 @@ export default function Sidebar() {
       <div className={`fixed inset-y-0 left-0 z-40 w-60 bg-dark-950 border-r border-dark-500/50 flex flex-col transition-transform duration-300 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-4 border-b border-dark-500/50">
           <div className="flex items-center gap-2.5">
-            <img src="/logo-dark.png" alt="ES" className="w-8 h-8 rounded-md" />
+            <img src={BRAND_LOGO_DARK} alt="ES" className="w-8 h-8 rounded-md" />
             <div>
               <div className="text-warm-50 text-[13px] font-semibold tracking-wide">Erick Sixto</div>
               <div className="text-warm-500 text-[10px] uppercase tracking-widest">Admin</div>
