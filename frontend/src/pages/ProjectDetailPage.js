@@ -6,7 +6,7 @@ import {
   ArrowLeft, LogOut, LayoutDashboard, Package, FileText, Calendar,
   Bell, MessageSquare, CheckCircle2, Clock, Loader2, XCircle,
   AlertCircle, Download, ExternalLink, Users, Send, ChevronDown,
-  ChevronRight, Circle, MinusCircle, Folder, ListChecks, CreditCard,
+  ChevronRight, Circle, MinusCircle, Folder, ListChecks, CreditCard, Flag,
   Search, X,
 } from 'lucide-react';
 
@@ -14,6 +14,7 @@ const TABS = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'tasks', label: 'Tasks', icon: ListChecks },
   { key: 'deliverables', label: 'Deliverables', icon: Package },
+  { key: 'roadmap', label: 'Roadmap', icon: Flag },
   { key: 'billing', label: 'Billing', icon: CreditCard },
   { key: 'documents', label: 'Documents', icon: FileText },
   { key: 'meetings', label: 'Meetings', icon: Calendar },
@@ -58,6 +59,7 @@ function isTabVisible(tabKey, config) {
   const toggleMap = {
     tasks: config.show_tasks,
     deliverables: config.show_deliverables,
+    roadmap: config.show_roadmap,
     billing: config.show_invoices,
     documents: config.show_documents,
     meetings: config.show_meetings,
@@ -94,6 +96,23 @@ function OverviewActionCard({ eyebrow, title, detail, actionLabel, onAction, ton
   );
 }
 
+function normalizeConfiguredTab(value) {
+  if (!value || typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  const mapping = {
+    overview: 'overview',
+    tasks: 'tasks',
+    deliverables: 'deliverables',
+    documents: 'documents',
+    meetings: 'meetings',
+    updates: 'updates',
+    request: 'request',
+    billing: 'billing',
+    roadmap: 'roadmap',
+  };
+  return mapping[normalized] || null;
+}
+
 /* ─── OVERVIEW TAB ─── */
 function OverviewTab({ data, config, onOpenTab }) {
   if (!data) return <EmptyState text="No overview data available." />;
@@ -107,10 +126,25 @@ function OverviewTab({ data, config, onOpenTab }) {
   } = data;
   const progress = metrics.tasks_total > 0 ? Math.round((metrics.tasks_completed / metrics.tasks_total) * 100) : 0;
   const projectType = formatProjectType(project?.project_type);
-  const needsAttention = (attention.overdue_tasks || 0) + (attention.blocked_tasks || 0);
+  const taskAttentionCount = (attention.overdue_tasks || 0) + (attention.blocked_tasks || 0);
+  const milestoneAttentionCount = attention.at_risk_milestones || 0;
+  const needsAttention = taskAttentionCount + milestoneAttentionCount;
   const nextDueTask = highlights.next_due_task;
   const nextMeeting = highlights.next_meeting;
   const latestUpdate = highlights.latest_update;
+  const nextMilestone = config?.show_roadmap === false ? null : highlights.next_milestone;
+  const milestoneProgress = metrics.milestones_total > 0
+    ? Math.round((metrics.milestones_completed / metrics.milestones_total) * 100)
+    : 0;
+  const nextUpTitle = nextMilestone?.name || nextDueTask?.name || 'No upcoming work scheduled yet';
+  const nextUpDetail = nextMilestone
+      ? `${formatDisplayDate(nextMilestone.target_date)} · ${nextMilestone.milestone_type || 'Milestone'}`
+      : nextDueTask
+        ? `${formatDisplayDate(nextDueTask.due_date)} · ${nextDueTask.priority || 'No priority'} priority`
+      : 'As new milestones and tasks are scheduled, the next due item will appear here.';
+  const nextUpAction = nextMilestone ? 'roadmap' : 'tasks';
+  const attentionActionTab = taskAttentionCount > 0 || config?.show_roadmap === false ? 'tasks' : 'roadmap';
+  const attentionActionLabel = attentionActionTab === 'roadmap' ? 'Review roadmap' : 'Review tasks';
 
   return (
     <div className="space-y-5">
@@ -146,14 +180,46 @@ function OverviewTab({ data, config, onOpenTab }) {
           </div>
         </div>
       )}
+      {(project?.project_health || project?.client_facing_summary || config?.support_sla_text) && (
+        <div className="rounded-xl border border-dark-500/40 bg-dark-700 p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-2">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-warm-500">Project Snapshot</div>
+              {project?.client_facing_summary ? (
+                <p className="max-w-2xl text-sm leading-relaxed text-warm-200">{project.client_facing_summary}</p>
+              ) : (
+                <p className="max-w-2xl text-sm leading-relaxed text-warm-400">This portal highlights the most important delivery progress, documents, and next actions for this project.</p>
+              )}
+              {config?.support_sla_text && (
+                <p className="text-xs leading-relaxed text-warm-500">{config.support_sla_text}</p>
+              )}
+            </div>
+            {project?.project_health && (
+              <span className={`inline-flex h-fit rounded-full px-3 py-1 text-[11px] font-medium ${
+                {
+                  'On Track': 'bg-green-500/15 text-green-400',
+                  'At Risk': 'bg-yellow-500/15 text-yellow-300',
+                  'Blocked': 'bg-red-500/15 text-red-400',
+                  'Completed': 'bg-blue-500/15 text-blue-400',
+                }[project.project_health] || 'bg-dark-600 text-warm-300'
+              }`}>
+                {project.project_health}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MetricCard label="Tasks" value={`${metrics.tasks_completed}/${metrics.tasks_total}`} sub={`${progress}% complete`} />
         <MetricCard label="Deliverables" value={`${metrics.deliverables_delivered}/${metrics.deliverables_total}`} sub="delivered" />
+        {config?.show_roadmap !== false && (
+          <MetricCard label="Milestones" value={`${metrics.milestones_completed || 0}/${metrics.milestones_total || 0}`} sub={`${milestoneProgress}% complete`} />
+        )}
         <MetricCard label="Open Tasks" value={attention.open_tasks || 0} sub="still in motion" />
         <MetricCard
           label="Needs Attention"
           value={needsAttention}
-          sub={`${attention.overdue_tasks || 0} overdue · ${attention.blocked_tasks || 0} blocked`}
+          sub={`${attention.overdue_tasks || 0} overdue · ${attention.blocked_tasks || 0} blocked${attention.at_risk_milestones ? ` · ${attention.at_risk_milestones} at risk milestone${attention.at_risk_milestones === 1 ? '' : 's'}` : ''}`}
         />
       </div>
       <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
@@ -171,23 +237,19 @@ function OverviewTab({ data, config, onOpenTab }) {
           title={needsAttention > 0 ? `${needsAttention} item${needsAttention !== 1 ? 's' : ''} need follow-up` : 'No urgent blockers right now'}
           detail={
             needsAttention > 0
-              ? `${attention.overdue_tasks || 0} overdue task${attention.overdue_tasks === 1 ? '' : 's'} and ${attention.blocked_tasks || 0} blocked task${attention.blocked_tasks === 1 ? '' : 's'} are affecting delivery.`
-              : `You currently have ${attention.open_tasks || 0} open task${attention.open_tasks === 1 ? '' : 's'} in motion.`
+              ? `${attention.overdue_tasks || 0} overdue task${attention.overdue_tasks === 1 ? '' : 's'} and ${attention.blocked_tasks || 0} blocked task${attention.blocked_tasks === 1 ? '' : 's'} are affecting delivery.${attention.at_risk_milestones ? ` ${attention.at_risk_milestones} roadmap milestone${attention.at_risk_milestones === 1 ? '' : 's'} also need attention.` : ''}`
+              : `You currently have ${attention.open_tasks || 0} open task${attention.open_tasks === 1 ? '' : 's'} in motion.${attention.client_action_items ? ` ${attention.client_action_items} item${attention.client_action_items === 1 ? '' : 's'} still need client action.` : ''}`
           }
-          actionLabel="Review tasks"
-          onAction={() => onOpenTab?.('tasks')}
+          actionLabel={attentionActionLabel}
+          onAction={() => onOpenTab?.(attentionActionTab)}
           tone={needsAttention > 0 ? 'caution' : 'positive'}
         />
         <OverviewActionCard
           eyebrow="Next Up"
-          title={nextDueTask?.name || 'No upcoming due task yet'}
-          detail={
-            nextDueTask
-              ? `${formatDisplayDate(nextDueTask.due_date)} · ${nextDueTask.priority || 'No priority'} priority`
-              : 'As new milestones and tasks are scheduled, the next due item will appear here.'
-          }
-          actionLabel="Open tasks"
-          onAction={() => onOpenTab?.('tasks')}
+          title={nextUpTitle}
+          detail={nextUpDetail}
+          actionLabel={nextMilestone ? 'Open roadmap' : 'Open tasks'}
+          onAction={() => onOpenTab?.(nextUpAction)}
           tone="default"
         />
         <OverviewActionCard
@@ -248,7 +310,7 @@ function OverviewTab({ data, config, onOpenTab }) {
                   <span className="text-[10px] text-warm-500">{u.date?.start || ''}</span>
                 </div>
                 <h3 className="text-sm font-medium text-warm-100">{u.name}</h3>
-                {u.content && <p className="text-xs text-warm-400 mt-1 line-clamp-2">{u.content}</p>}
+                {(u.excerpt || u.content) && <p className="text-xs text-warm-400 mt-1 line-clamp-2">{u.excerpt || u.content}</p>}
               </div>
             ))}
           </div>
@@ -322,53 +384,286 @@ function DeliverablesTab({ projectId }) {
   );
 }
 
-/* ─── DOCUMENTS TAB ─── */
-function DocumentsTab({ projectId }) {
-  const [data, setData] = useState(null);
+/* ─── ROADMAP TAB ─── */
+const ROADMAP_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'Upcoming', label: 'Upcoming' },
+  { key: 'At Risk', label: 'At Risk' },
+  { key: 'Completed', label: 'Completed' },
+  { key: 'action', label: 'Client Action' },
+];
+
+function RoadmapTab({ projectId }) {
+  const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+
   useEffect(() => {
-    api(`/api/portal/project/${projectId}/documents`).then(setData).catch(console.error).finally(() => setLoading(false));
+    api(`/api/portal/project/${projectId}/roadmap`).then(setMilestones).catch(console.error).finally(() => setLoading(false));
   }, [projectId]);
+
   if (loading) return <Spinner />;
-  const hasData = data && ((data.deliverable_files?.length > 0) || (data.proposals?.length > 0) || (data.contracts?.length > 0));
-  if (!hasData) return <EmptyState text="No documents available." icon={FileText} />;
+  if (milestones.length === 0) return <EmptyState text="No roadmap milestones available yet." icon={Flag} />;
+
+  const filtered = milestones.filter((milestone) => {
+    if (filter === 'all') return true;
+    if (filter === 'action') return milestone.customer_action_needed;
+    return milestone.status === filter;
+  });
+  const completedCount = milestones.filter((milestone) => milestone.status === 'Completed').length;
+  const atRiskCount = milestones.filter((milestone) => milestone.status === 'At Risk').length;
+  const nextMilestone = milestones.find((milestone) => milestone.status !== 'Completed') || null;
+
   return (
-    <div className="space-y-5">
-      <DocSection title="Proposals" items={data.proposals} />
-      <DocSection title="Contracts" items={data.contracts} />
-      <DocSection title="Deliverable Files" items={data.deliverable_files} />
+    <div className="space-y-5" data-testid="roadmap-tab">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <MetricCard label="Progress" value={`${completedCount}/${milestones.length}`} sub="milestones complete" />
+        <MetricCard label="At Risk" value={atRiskCount} sub="need close follow-up" />
+        <MetricCard label="Next Up" value={nextMilestone?.name || 'Waiting'} sub={nextMilestone ? formatDisplayDate(nextMilestone.target_date) : 'No pending milestone'} />
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap" data-testid="roadmap-filters">
+        {ROADMAP_FILTERS.map((option) => {
+          const active = filter === option.key;
+          return (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setFilter(option.key)}
+              className={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                active
+                  ? 'border-accent/30 bg-accent/15 text-accent'
+                  : 'border-dark-500/40 bg-dark-800 text-warm-400 hover:border-dark-400 hover:text-warm-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState text="No milestones match this filter." icon={Flag} />
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((milestone) => {
+            const statusStyle = {
+              Upcoming: 'bg-blue-500/15 text-blue-400',
+              'At Risk': 'bg-red-500/15 text-red-400',
+              Completed: 'bg-green-500/15 text-green-400',
+            }[milestone.status] || 'bg-dark-600 text-warm-300';
+
+            return (
+              <div key={milestone.id} className="rounded-xl border border-dark-500/40 bg-dark-700 p-5" data-testid={`milestone-${milestone.id}`}>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${statusStyle}`}>{milestone.status || 'Upcoming'}</span>
+                      {milestone.milestone_type && (
+                        <span className="inline-flex rounded-full bg-dark-800 px-2 py-0.5 text-[10px] font-medium text-warm-400">
+                          {milestone.milestone_type}
+                        </span>
+                      )}
+                      {milestone.customer_action_needed && (
+                        <span className="inline-flex rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">
+                          Client action needed
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-warm-100">{milestone.name}</h3>
+                      {milestone.summary && <p className="mt-1 text-xs leading-relaxed text-warm-400">{milestone.summary}</p>}
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap text-[11px] text-warm-500">
+                      {milestone.target_date && <span>Target: {formatDisplayDate(milestone.target_date)}</span>}
+                      {milestone.completed_date && <span>Completed: {formatDisplayDate(milestone.completed_date)}</span>}
+                      {milestone.owner?.length > 0 && <span>Owner: {milestone.owner.map((person) => person.name).join(', ')}</span>}
+                    </div>
+                  </div>
+                  {milestone.cta_url && milestone.cta_label && (
+                    <a
+                      href={milestone.cta_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-dark-950 transition-colors hover:bg-accent-light"
+                    >
+                      {milestone.cta_label}
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-function DocSection({ title, items }) {
-  if (!items || items.length === 0) return null;
+/* ─── DOCUMENTS TAB ─── */
+function DocumentsTab({ projectId }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  useEffect(() => {
+    api(`/api/portal/project/${projectId}/documents`).then(setData).catch(console.error).finally(() => setLoading(false));
+  }, [projectId]);
+
+  if (loading) return <Spinner />;
+
+  const documents = data?.documents || [];
+  if (documents.length === 0) return <EmptyState text="No documents available." icon={FileText} />;
+
+  const categories = [...new Set(documents.map((document) => document.category).filter(Boolean))];
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredDocuments = documents.filter((document) => {
+    const matchesCategory = categoryFilter === 'all' || document.category === categoryFilter;
+    if (!matchesCategory) return false;
+    if (!normalizedQuery) return true;
+    const haystack = [
+      document.title,
+      document.name,
+      document.summary,
+      document.category,
+      document.source_system,
+      document.status,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(normalizedQuery);
+  });
+
   return (
-    <div>
-      <h2 className="text-sm font-semibold text-warm-100 mb-2">{title}</h2>
-      <div className="space-y-1.5">
-        {items.map((item, i) => (
-          <div key={item.id || i} className="bg-dark-700 rounded-xl border border-dark-500/40 p-4 flex items-center justify-between" data-testid={`doc-${item.id || i}`}>
-            <div className="flex items-center gap-3 min-w-0">
-              <FileText size={16} className="text-warm-500 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm text-warm-100 truncate">{item.name}</div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  {item.status && <span className="text-[10px] text-warm-500">{item.status}</span>}
-                  {item.type && <span className="text-[10px] text-warm-500 bg-dark-600 px-1.5 py-0.5 rounded">{item.type}</span>}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {item.files && item.files.map((f, fi) => (
-                <a key={fi} href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-accent hover:text-accent-light">
-                  <Download size={12} /> {f.name || 'Download'}
-                </a>
-              ))}
-            </div>
-          </div>
-        ))}
+    <div className="space-y-5" data-testid="documents-tab">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <MetricCard label="Published" value={documents.filter((document) => document.status === 'Published').length} sub="ready for clients" />
+        <MetricCard label="Needs Review" value={documents.filter((document) => document.needs_review).length} sub="editorial follow-up" />
+        <MetricCard label="Categories" value={categories.length} sub="document groups" />
       </div>
+
+      <div className="space-y-3 rounded-xl border border-dark-500/40 bg-dark-700 p-4">
+        <div className="relative w-full md:max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-500" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search documents, summaries, or source"
+            className="w-full rounded-xl border border-dark-500/40 bg-dark-800 py-2.5 pl-9 pr-10 text-sm text-warm-100 placeholder-warm-500 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 hover:text-warm-200"
+              aria-label="Clear document search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('all')}
+            className={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors ${
+              categoryFilter === 'all'
+                ? 'border-accent/30 bg-accent/15 text-accent'
+                : 'border-dark-500/40 bg-dark-800 text-warm-400 hover:border-dark-400 hover:text-warm-200'
+            }`}
+          >
+            All
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setCategoryFilter(category)}
+              className={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                categoryFilter === category
+                  ? 'border-accent/30 bg-accent/15 text-accent'
+                  : 'border-dark-500/40 bg-dark-800 text-warm-400 hover:border-dark-400 hover:text-warm-200'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filteredDocuments.length === 0 ? (
+        <EmptyState text="No documents match this filter." icon={FileText} />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {filteredDocuments.map((document) => (
+            <DocumentCard key={document.id} document={document} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DocumentCard({ document }) {
+  const statusStyle = {
+    Draft: 'bg-warm-500/15 text-warm-400',
+    Published: 'bg-green-500/15 text-green-400',
+    Archived: 'bg-dark-600 text-warm-400',
+  }[document.status] || 'bg-dark-600 text-warm-300';
+
+  return (
+    <div className="rounded-xl border border-dark-500/40 bg-dark-700 p-5" data-testid={`doc-${document.id}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            {document.category && <span className="rounded-full bg-dark-800 px-2 py-0.5 text-[10px] font-medium text-warm-400">{document.category}</span>}
+            {document.status && <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusStyle}`}>{document.status}</span>}
+            {document.needs_review && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">Needs review</span>}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-warm-100">{document.title || document.name}</h3>
+            {document.summary && <p className="mt-1 text-xs leading-relaxed text-warm-400">{document.summary}</p>}
+          </div>
+          <div className="flex items-center gap-3 flex-wrap text-[11px] text-warm-500">
+            {document.published_at && <span>Published: {formatDisplayDate(document.published_at)}</span>}
+            {document.source_system && <span>Source: {document.source_system}</span>}
+            {document.last_reviewed_at && <span>Reviewed: {formatDisplayDate(document.last_reviewed_at)}</span>}
+          </div>
+        </div>
+        {document.primary_url && (
+          <a
+            href={document.primary_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-dark-950 transition-colors hover:bg-accent-light"
+          >
+            Open
+            <ExternalLink size={12} />
+          </a>
+        )}
+      </div>
+
+      {document.files?.length > 0 && (
+        <div className="mt-4 flex items-center gap-2 flex-wrap border-t border-dark-500/30 pt-4">
+          {document.files.map((file, index) => (
+            <a
+              key={`${document.id}-${index}`}
+              href={file.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-light"
+            >
+              <Download size={12} />
+              {file.name || 'Download'}
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -591,14 +886,25 @@ function TaskRow({ task, isExpanded, onToggle }) {
               <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${priorityColors[task.priority]}`}>{task.priority} Priority</span>
             )}
             {task.tag && <span className="text-[10px] bg-dark-600 px-2 py-0.5 rounded text-warm-400">{task.tag}</span>}
+            {task.customer_action_needed && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/20">
+                Client action needed
+              </span>
+            )}
           </div>
-          {task.notes ? (
+          {(task.client_facing_notes || task.notes) ? (
             <div>
               <div className="text-[10px] font-semibold text-warm-500 uppercase tracking-wider mb-1">Description</div>
-              <p className="text-xs text-warm-300 whitespace-pre-line leading-relaxed">{task.notes}</p>
+              <p className="text-xs text-warm-300 whitespace-pre-line leading-relaxed">{task.client_facing_notes || task.notes}</p>
             </div>
           ) : (
             <p className="text-xs text-warm-600 italic">No description provided.</p>
+          )}
+          {task.blocked_reason && (
+            <div>
+              <div className="text-[10px] font-semibold text-warm-500 uppercase tracking-wider mb-1">Blocked Reason</div>
+              <p className="text-xs text-warm-300 whitespace-pre-line leading-relaxed">{task.blocked_reason}</p>
+            </div>
           )}
           <div className="flex items-center gap-4 text-[10px] text-warm-500 pt-1 border-t border-dark-500/30">
             {task.due_date && <span>Due: {task.due_date?.start || task.due_date}</span>}
@@ -702,6 +1008,9 @@ function TasksTab({ projectId }) {
       const phaseRankA = orderedTaskPhases.indexOf(normalizeTaskPhase(a.phase));
       const phaseRankB = orderedTaskPhases.indexOf(normalizeTaskPhase(b.phase));
       if (phaseRankA !== phaseRankB) return phaseRankA - phaseRankB;
+      const sortOrderA = a.sort_order ?? Number.MAX_SAFE_INTEGER;
+      const sortOrderB = b.sort_order ?? Number.MAX_SAFE_INTEGER;
+      if (sortOrderA !== sortOrderB) return sortOrderA - sortOrderB;
       const statusRank = (statusWeight[a.status] ?? 5) - (statusWeight[b.status] ?? 5);
       if (statusRank !== 0) return statusRank;
       const dueDateA = a.due_date?.start || '9999-12-31';
@@ -926,11 +1235,23 @@ function UpdatesTab({ projectId }) {
       {updates.map(u => (
         <div key={u.id} data-testid={`update-${u.id}`} className="bg-dark-700 rounded-xl border border-dark-500/40 p-5">
           <div className="flex items-center gap-2 mb-2">
+            {u.pinned && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border border-accent/20 bg-accent/10 text-accent">Pinned</span>}
             {u.type && <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${typeColors[u.type] || 'bg-warm-500/15 text-warm-400 border-warm-500/20'}`}>{u.type}</span>}
             <span className="text-[10px] text-warm-500">{u.date?.start || ''}</span>
           </div>
           <h3 className="text-sm font-semibold text-warm-100 mb-1">{u.name}</h3>
-          {u.content && <p className="text-xs text-warm-400 whitespace-pre-line leading-relaxed">{u.content}</p>}
+          {(u.excerpt || u.content) && <p className="text-xs text-warm-400 whitespace-pre-line leading-relaxed">{u.excerpt || u.content}</p>}
+          {u.cta_url && u.cta_label && (
+            <a
+              href={u.cta_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-light"
+            >
+              {u.cta_label}
+              <ExternalLink size={12} />
+            </a>
+          )}
         </div>
       ))}
     </div>
@@ -947,7 +1268,7 @@ const requestTypeGuidance = {
   Support: 'Use this for blockers, urgent fixes, or issues that need operational help.',
 };
 
-function RequestTab({ projectId }) {
+function RequestTab({ projectId, config }) {
   const [form, setForm] = useState({ name: '', type: 'Question', priority: 'Medium', description: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -981,6 +1302,12 @@ function RequestTab({ projectId }) {
         <p className="mt-2 text-xs leading-relaxed text-warm-300">
           Share one request at a time so we can triage it clearly. Choose <span className="text-warm-100">High</span> priority only for blockers or urgent support.
         </p>
+        {(config?.support_sla_text || config?.escalation_contact) && (
+          <div className="mt-3 space-y-1 text-[11px] leading-relaxed text-warm-500">
+            {config?.support_sla_text && <p>{config.support_sla_text}</p>}
+            {config?.escalation_contact && <p>Escalation contact: <span className="text-warm-300">{config.escalation_contact}</span></p>}
+          </div>
+        )}
       </div>
       <div>
         <label className="block text-xs font-medium text-warm-200 mb-1">Subject</label>
@@ -1072,7 +1399,8 @@ export default function ProjectDetailPage() {
 
   const visibleTabs = TABS.filter((tab) => tab.key === 'overview' || isTabVisible(tab.key, portalConfig));
   const roleAwareTabs = visibleTabs.filter((tab) => tab.key !== 'billing' || user?.role === 'admin');
-  const requestedTab = searchParams.get('tab') || 'overview';
+  const configuredLandingTab = normalizeConfiguredTab(portalConfig?.default_landing_tab);
+  const requestedTab = searchParams.get('tab') || configuredLandingTab || 'overview';
   const activeTab = roleAwareTabs.some((tab) => tab.key === requestedTab)
     ? requestedTab
     : (roleAwareTabs[0]?.key || 'overview');
@@ -1111,11 +1439,12 @@ export default function ProjectDetailPage() {
     overview: <OverviewTab data={dashData} config={portalConfig} onOpenTab={openTab} />,
     tasks: <TasksTab projectId={projectId} />,
     deliverables: <DeliverablesTab projectId={projectId} />,
+    roadmap: <RoadmapTab projectId={projectId} />,
     billing: <BillingTab projectId={projectId} />,
     documents: <DocumentsTab projectId={projectId} />,
     meetings: <MeetingsTab projectId={projectId} />,
     updates: <UpdatesTab projectId={projectId} />,
-    request: <RequestTab projectId={projectId} />,
+    request: <RequestTab projectId={projectId} config={portalConfig} />,
   };
 
   return (

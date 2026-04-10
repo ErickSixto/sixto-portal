@@ -146,7 +146,9 @@ export default function ProjectsPage() {
   const hasActiveFilters = viewFilter !== 'all' || normalizedQuery.length > 0;
   const totalActiveProjects = projects.filter((project) => !isCompletedProject(project)).length;
   const totalCompletedProjects = projects.filter(isCompletedProject).length;
-  const defaultProject = projects.find((project) => !isCompletedProject(project)) || projects[0];
+  const defaultProject = projects.find((project) => project.id === user?.default_project_id)
+    || projects.find((project) => !isCompletedProject(project))
+    || projects[0];
 
   return (
     <div className="min-h-screen bg-dark-900" data-testid="projects-page">

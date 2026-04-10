@@ -40,6 +40,8 @@ const projects = [
     branch: 'Growth',
     project_date: { start: '2026-03-01', end: '2026-05-15' },
     estimated_amount: 24000,
+    project_health: 'On Track',
+    client_facing_summary: 'We are moving through the first automation release and preparing the executive dashboard review.',
   },
   {
     id: 'project-bluegate-retainer',
@@ -51,6 +53,8 @@ const projects = [
     branch: 'Operations',
     project_date: { start: '2026-04-01', end: '2026-06-30' },
     estimated_amount: 8000,
+    project_health: 'On Track',
+    client_facing_summary: 'Support operations are being set up so requests and escalation paths are clear from the start.',
   },
   {
     id: 'project-northstar-migration',
@@ -62,6 +66,37 @@ const projects = [
     branch: 'Transformation',
     project_date: { start: '2026-02-10', end: '2026-06-01' },
     estimated_amount: 32000,
+    project_health: 'At Risk',
+    client_facing_summary: 'Internal sample project for admin verification and workflow testing.',
+  },
+];
+
+const portalUsers = [
+  {
+    id: 'portal-user-admin',
+    email: ADMIN_EMAIL,
+    name: 'Erick Sixto',
+    role: 'Admin',
+    notion_role: 'Admin',
+    status: 'Active',
+    client_notion_id: null,
+    project_ids: projects.map((project) => project.id),
+    default_project_id: 'project-bluegate-revops',
+    access_scope: 'Admin',
+    portal_user_notion_id: 'portal-user-admin',
+  },
+  {
+    id: 'portal-user-bluegate',
+    email: CLIENT_EMAIL,
+    name: 'Arman Diaz',
+    role: 'Client',
+    notion_role: 'Client',
+    status: 'Active',
+    client_notion_id: 'client-bluegate',
+    project_ids: ['project-bluegate-revops', 'project-bluegate-retainer'],
+    default_project_id: 'project-bluegate-revops',
+    access_scope: 'Project-specific',
+    portal_user_notion_id: 'portal-user-bluegate',
   },
 ];
 
@@ -78,8 +113,12 @@ const tasksByProject = {
       client_visible: true,
       tag: 'Discovery',
       notes: 'Consolidated stakeholder interviews, lead routing issues, and reporting gaps.',
+      client_facing_notes: 'Discovery is complete and the findings package has already been shared.',
       assignee: [{ name: 'Erick Sixto' }],
       files: [{ name: 'Discovery Summary.pdf', url: 'https://example.com/discovery-summary.pdf' }],
+      customer_action_needed: false,
+      blocked_reason: '',
+      sort_order: 1,
     },
     {
       id: 'task-2',
@@ -92,8 +131,12 @@ const tasksByProject = {
       client_visible: true,
       tag: 'Automation',
       notes: 'Define handoff rules from marketing-qualified lead through opportunity creation.',
+      client_facing_notes: 'We are mapping the future-state lead lifecycle and validating handoff logic.',
       assignee: [{ name: 'Erick Sixto' }, { name: 'Arman Diaz' }],
       files: [],
+      customer_action_needed: true,
+      blocked_reason: '',
+      sort_order: 2,
     },
     {
       id: 'task-3',
@@ -106,8 +149,12 @@ const tasksByProject = {
       client_visible: true,
       tag: 'Reporting',
       notes: 'Waiting on final definitions for regional pipeline segmentation.',
+      client_facing_notes: 'The dashboard build is ready to continue once the final segmentation definitions are confirmed.',
       assignee: [{ name: 'Erick Sixto' }],
       files: [],
+      customer_action_needed: true,
+      blocked_reason: 'Waiting on final definitions for regional pipeline segmentation.',
+      sort_order: 3,
     },
     {
       id: 'task-4',
@@ -120,8 +167,12 @@ const tasksByProject = {
       client_visible: true,
       tag: 'Data',
       notes: 'Batch cleanup after validation rules are finalized.',
+      client_facing_notes: 'Account cleanup will happen after validation rules are confirmed.',
       assignee: [{ name: 'Ops Coordinator' }],
       files: [],
+      customer_action_needed: false,
+      blocked_reason: '',
+      sort_order: 4,
     },
     {
       id: 'task-7',
@@ -136,6 +187,9 @@ const tasksByProject = {
       notes: 'Internal verification task that should remain hidden from clients.',
       assignee: [{ name: 'Erick Sixto' }],
       files: [],
+      customer_action_needed: false,
+      blocked_reason: '',
+      sort_order: 99,
     },
   ],
   'project-bluegate-retainer': [
@@ -150,8 +204,12 @@ const tasksByProject = {
       client_visible: true,
       tag: 'Support',
       notes: 'Define triage categories, escalation path, and response expectations.',
+      client_facing_notes: 'We are finalizing the support motion so your team knows what to expect on response times and escalation.',
       assignee: [{ name: 'Erick Sixto' }],
       files: [],
+      customer_action_needed: false,
+      blocked_reason: '',
+      sort_order: 1,
     },
   ],
   'project-northstar-migration': [
@@ -166,8 +224,12 @@ const tasksByProject = {
       client_visible: true,
       tag: 'Schema',
       notes: 'Admin-only sample project for the management dashboard.',
+      client_facing_notes: 'Admin-only sample project for the management dashboard.',
       assignee: [{ name: 'Erick Sixto' }],
       files: [],
+      customer_action_needed: false,
+      blocked_reason: '',
+      sort_order: 1,
     },
   ],
 };
@@ -224,6 +286,179 @@ const deliverablesByProject = {
   'project-northstar-migration': [],
 };
 
+const portalDocumentsByProject = {
+  'project-bluegate-revops': [
+    {
+      id: 'document-bluegate-plan',
+      name: 'Delivery Plan',
+      title: 'Bluegate Delivery Plan',
+      project: ['project-bluegate-revops'],
+      client: ['client-bluegate'],
+      category: 'Guide',
+      client_facing_title: 'Bluegate Delivery Plan',
+      summary: 'Implementation sequence, owners, and key decision points for the current delivery phase.',
+      files: [{ name: 'Delivery Plan.pdf', url: 'https://example.com/delivery-plan.pdf' }],
+      external_url: '',
+      client_visible: true,
+      sort_order: 1,
+      status: 'Published',
+      published_at: { start: '2026-04-08', end: null },
+      source_system: 'Native',
+      external_id: 'doc-delivery-plan',
+      owner: [{ name: 'Erick Sixto' }],
+      source_last_synced_at: { start: '2026-04-08', end: null },
+      last_reviewed_at: { start: '2026-04-08', end: null },
+      needs_review: false,
+      primary_url: 'https://example.com/delivery-plan.pdf',
+    },
+    {
+      id: 'document-bluegate-contract',
+      name: 'Master Services Agreement',
+      title: 'Signed MSA',
+      project: ['project-bluegate-revops'],
+      client: ['client-bluegate'],
+      category: 'Contract',
+      summary: 'Executed commercial agreement for the current engagement.',
+      files: [{ name: 'Signed Contract.pdf', url: 'https://example.com/contract.pdf' }],
+      external_url: '',
+      client_visible: true,
+      sort_order: 2,
+      status: 'Published',
+      published_at: { start: '2026-03-03', end: null },
+      source_system: 'Contract',
+      external_id: 'contract-bluegate-001',
+      owner: [{ name: 'Erick Sixto' }],
+      source_last_synced_at: { start: '2026-04-09', end: null },
+      last_reviewed_at: { start: '2026-04-09', end: null },
+      needs_review: false,
+      primary_url: 'https://example.com/contract.pdf',
+    },
+    {
+      id: 'document-bluegate-report',
+      name: 'Executive Dashboard Notes',
+      title: 'Executive Dashboard Notes',
+      project: ['project-bluegate-revops'],
+      client: ['client-bluegate'],
+      category: 'Report',
+      summary: 'Working notes for the dashboard review session.',
+      files: [{ name: 'Dashboard Notes.pdf', url: 'https://example.com/dashboard-notes.pdf' }],
+      external_url: '',
+      client_visible: true,
+      sort_order: 3,
+      status: 'Draft',
+      published_at: null,
+      source_system: 'Deliverable',
+      external_id: 'deliverable-dashboard-notes',
+      owner: [{ name: 'Erick Sixto' }],
+      source_last_synced_at: { start: '2026-04-10', end: null },
+      last_reviewed_at: null,
+      needs_review: true,
+      primary_url: 'https://example.com/dashboard-notes.pdf',
+    },
+  ],
+  'project-bluegate-retainer': [
+    {
+      id: 'document-support-playbook',
+      name: 'Support Playbook',
+      title: 'Support Playbook',
+      project: ['project-bluegate-retainer'],
+      client: ['client-bluegate'],
+      category: 'Guide',
+      summary: 'How requests are triaged, prioritized, and escalated inside the retainer.',
+      files: [{ name: 'Support Playbook.pdf', url: 'https://example.com/support-playbook.pdf' }],
+      external_url: '',
+      client_visible: true,
+      sort_order: 1,
+      status: 'Published',
+      published_at: { start: '2026-04-09', end: null },
+      source_system: 'Native',
+      external_id: 'support-playbook',
+      owner: [{ name: 'Erick Sixto' }],
+      source_last_synced_at: { start: '2026-04-09', end: null },
+      last_reviewed_at: { start: '2026-04-09', end: null },
+      needs_review: false,
+      primary_url: 'https://example.com/support-playbook.pdf',
+    },
+  ],
+  'project-northstar-migration': [],
+};
+
+const milestonesByProject = {
+  'project-bluegate-revops': [
+    {
+      id: 'milestone-discovery',
+      name: 'Discovery sign-off',
+      project: ['project-bluegate-revops'],
+      client: ['client-bluegate'],
+      status: 'Completed',
+      milestone_type: 'Approval',
+      target_date: { start: '2026-03-14', end: null },
+      completed_date: { start: '2026-03-14', end: null },
+      summary: 'Discovery findings and recommendations approved for execution.',
+      owner: [{ name: 'Erick Sixto' }],
+      client_visible: true,
+      sort_order: 1,
+      customer_action_needed: false,
+      cta_label: '',
+      cta_url: '',
+    },
+    {
+      id: 'milestone-automation-review',
+      name: 'Automation review',
+      project: ['project-bluegate-revops'],
+      client: ['client-bluegate'],
+      status: 'Upcoming',
+      milestone_type: 'Delivery',
+      target_date: { start: '2026-04-18', end: null },
+      completed_date: null,
+      summary: 'Review the first automation release together and confirm the rollout checklist.',
+      owner: [{ name: 'Erick Sixto' }],
+      client_visible: true,
+      sort_order: 2,
+      customer_action_needed: true,
+      cta_label: 'Review notes',
+      cta_url: 'https://example.com/automation-review',
+    },
+    {
+      id: 'milestone-dashboard-signoff',
+      name: 'Executive dashboard sign-off',
+      project: ['project-bluegate-revops'],
+      client: ['client-bluegate'],
+      status: 'At Risk',
+      milestone_type: 'Approval',
+      target_date: { start: '2026-04-25', end: null },
+      completed_date: null,
+      summary: 'Pending final segmentation definitions before dashboard approval can happen.',
+      owner: [{ name: 'Erick Sixto' }],
+      client_visible: true,
+      sort_order: 3,
+      customer_action_needed: true,
+      cta_label: 'Share final definitions',
+      cta_url: 'https://example.com/dashboard-definitions',
+    },
+  ],
+  'project-bluegate-retainer': [
+    {
+      id: 'milestone-retainer-kickoff',
+      name: 'Retainer kickoff',
+      project: ['project-bluegate-retainer'],
+      client: ['client-bluegate'],
+      status: 'Upcoming',
+      milestone_type: 'Kickoff',
+      target_date: { start: '2026-04-11', end: null },
+      completed_date: null,
+      summary: 'Confirm scope boundaries, intake cadence, and escalation expectations.',
+      owner: [{ name: 'Erick Sixto' }],
+      client_visible: true,
+      sort_order: 1,
+      customer_action_needed: false,
+      cta_label: 'Join kickoff',
+      cta_url: 'https://meet.google.com/example-kickoff',
+    },
+  ],
+  'project-northstar-migration': [],
+};
+
 const updatesByProject = {
   'project-bluegate-revops': [
     {
@@ -234,6 +469,10 @@ const updatesByProject = {
       content: 'We started building the first automation set and aligned on the revised handoff logic.',
       type: 'Status Update',
       client_visible: true,
+      pinned: true,
+      excerpt: 'Automation build is underway and the handoff logic has been aligned.',
+      cta_label: 'Review plan',
+      cta_url: 'https://example.com/delivery-plan',
     },
     {
       id: 'update-2',
@@ -243,6 +482,10 @@ const updatesByProject = {
       content: 'The recommendations package was reviewed and approved with one follow-up on dashboard segmentation.',
       type: 'Milestone',
       client_visible: true,
+      pinned: false,
+      excerpt: 'Recommendations were approved and the project moved into execution.',
+      cta_label: '',
+      cta_url: '',
     },
   ],
   'project-bluegate-retainer': [
@@ -254,6 +497,10 @@ const updatesByProject = {
       content: 'Email and case intake are in scope for the first support sprint.',
       type: 'Announcement',
       client_visible: true,
+      pinned: true,
+      excerpt: 'Support intake channels are confirmed for the first sprint.',
+      cta_label: 'Open support intake',
+      cta_url: 'https://example.com/support-intake',
     },
   ],
   'project-northstar-migration': [],
@@ -395,6 +642,10 @@ const portalConfigs = {
     cta_label: 'Review Delivery Plan',
     cta_url: 'https://example.com/delivery-plan',
     support_contact: 'Erick Sixto',
+    default_landing_tab: 'Overview',
+    support_sla_text: 'Questions and standard requests are usually reviewed within 1 business day.',
+    escalation_contact: 'sixto.developer@gmail.com',
+    welcome_checklist_enabled: true,
     status: 'Active',
   },
   'project-bluegate-retainer': {
@@ -415,6 +666,10 @@ const portalConfigs = {
     cta_label: 'Submit Support Need',
     cta_url: 'https://example.com/support-intake',
     support_contact: 'Erick Sixto',
+    default_landing_tab: 'Request',
+    support_sla_text: 'Retainer requests are triaged during business hours and urgent blockers are prioritized first.',
+    escalation_contact: 'sixto.developer@gmail.com',
+    welcome_checklist_enabled: true,
     status: 'Draft',
   },
   'project-northstar-migration': {
@@ -435,6 +690,10 @@ const portalConfigs = {
     cta_label: 'Open Workspace',
     cta_url: 'https://example.com/workspace',
     support_contact: 'Erick Sixto',
+    default_landing_tab: 'Overview',
+    support_sla_text: 'Internal sample portal for admin verification.',
+    escalation_contact: 'sixto.developer@gmail.com',
+    welcome_checklist_enabled: false,
     status: 'Active',
   },
 };
@@ -484,25 +743,19 @@ function isOpenTask(task) {
 }
 
 function getMockUserForEmail(email) {
-  if (email === ADMIN_EMAIL) {
+  const portalUser = portalUsers.find((user) => user.email === email);
+  if (portalUser) {
     return {
-      id: 'user-admin',
-      email,
-      role: 'admin',
-      name: 'Erick Sixto',
-      client_notion_id: null,
-      project_ids: projects.map((project) => project.id),
-    };
-  }
-
-  if (email === CLIENT_EMAIL) {
-    return {
-      id: 'user-client-bluegate',
-      email,
-      role: 'client',
-      name: 'Arman Diaz',
-      client_notion_id: 'client-bluegate',
-      project_ids: ['project-bluegate-revops', 'project-bluegate-retainer'],
+      id: portalUser.id,
+      email: portalUser.email,
+      role: portalUser.role === 'Client' ? 'client' : 'admin',
+      name: portalUser.name,
+      client_notion_id: portalUser.client_notion_id,
+      project_ids: portalUser.project_ids,
+      default_project_id: portalUser.default_project_id,
+      access_scope: portalUser.access_scope,
+      portal_user_notion_id: portalUser.portal_user_notion_id,
+      notion_role: portalUser.notion_role,
     };
   }
 
@@ -513,6 +766,7 @@ function getDashboard(projectId, user) {
   const project = getProjectById(projectId);
   const tasks = getVisibleRecords(tasksByProject[projectId] || [], user);
   const deliverables = getVisibleRecords(deliverablesByProject[projectId] || [], user);
+  const milestones = getVisibleRecords(milestonesByProject[projectId] || [], user);
   const updates = getVisibleRecords(updatesByProject[projectId] || [], user).sort((a, b) => (b.date?.start || '').localeCompare(a.date?.start || ''));
   const meetings = getVisibleRecords(meetingsByProject[projectId] || [], user);
   const now = new Date().toISOString();
@@ -524,6 +778,7 @@ function getDashboard(projectId, user) {
   const today = new Date().toISOString().slice(0, 10);
   const overdueTasks = openTasks.filter((task) => task.due_date?.start && task.due_date.start.slice(0, 10) < today);
   const nextDueTask = openTasks.find((task) => task.due_date?.start && task.due_date.start.slice(0, 10) >= today) || null;
+  const nextMilestone = milestones.find((milestone) => milestone.status !== 'Completed') || null;
 
   return {
     project,
@@ -534,16 +789,21 @@ function getDashboard(projectId, user) {
       tasks_total: tasks.length,
       deliverables_delivered: deliverables.filter((item) => ['Delivered', 'Accepted'].includes(item.status)).length,
       deliverables_total: deliverables.length,
+      milestones_completed: milestones.filter((milestone) => milestone.status === 'Completed').length,
+      milestones_total: milestones.length,
     },
     attention: {
       open_tasks: openTasks.length,
       blocked_tasks: openTasks.filter((task) => task.status === 'Blocked').length,
       overdue_tasks: overdueTasks.length,
+      at_risk_milestones: milestones.filter((milestone) => milestone.status === 'At Risk').length,
+      client_action_items: openTasks.filter((task) => task.customer_action_needed).length + milestones.filter((milestone) => milestone.customer_action_needed && milestone.status !== 'Completed').length,
     },
     highlights: {
       next_due_task: nextDueTask,
       next_meeting: upcomingMeetings[0] || null,
       latest_update: updates[0] || null,
+      next_milestone: nextMilestone,
     },
   };
 }
@@ -654,7 +914,17 @@ export async function mockApi(path, options = {}) {
     const user = requireUser();
 
     if (path === '/api/portal/projects') {
-      return createResponse(getAccessibleProjects(user).map(({ estimated_amount, client_name, ...project }) => project));
+      const scopedProjects = getAccessibleProjects(user)
+        .map(({ estimated_amount, client_name, ...project }) => project)
+        .sort((a, b) => {
+          if (user.default_project_id) {
+            const aIsDefault = a.id === user.default_project_id;
+            const bIsDefault = b.id === user.default_project_id;
+            if (aIsDefault !== bIsDefault) return aIsDefault ? -1 : 1;
+          }
+          return (a.name || '').localeCompare(b.name || '');
+        });
+      return createResponse(scopedProjects);
     }
 
     const projectMatch = path.match(/^\/api\/portal\/project\/([^/]+)\/([^/]+)$/);
@@ -666,31 +936,13 @@ export async function mockApi(path, options = {}) {
       if (section === 'config') return createResponse(portalConfigs[projectId] || null);
       if (section === 'tasks') return createResponse(getVisibleRecords(tasksByProject[projectId] || [], user));
       if (section === 'deliverables') return createResponse(getVisibleRecords(deliverablesByProject[projectId] || [], user));
+      if (section === 'roadmap') return createResponse(getVisibleRecords(milestonesByProject[projectId] || [], user));
       if (section === 'documents') {
-        const deliverables = getVisibleRecords(deliverablesByProject[projectId] || [], user).filter((item) => item.files?.length);
-        return createResponse({
-          deliverable_files: deliverables,
-          proposals: [
-            {
-              id: `${projectId}-proposal`,
-              name: 'Project Proposal',
-              status: 'Approved',
-              date: { start: '2026-03-01', end: null },
-              files: [{ name: 'Proposal.pdf', url: 'https://example.com/proposal.pdf' }],
-              type: 'Proposal',
-            },
-          ],
-          contracts: [
-            {
-              id: `${projectId}-contract`,
-              name: 'Signed Contract',
-              status: 'Executed',
-              date: { start: '2026-03-03', end: null },
-              files: [{ name: 'Contract.pdf', url: 'https://example.com/contract.pdf' }],
-              type: 'Contract',
-            },
-          ],
+        const documents = (portalDocumentsByProject[projectId] || []).filter((document) => {
+          if (user.role === 'admin') return true;
+          return document.client_visible !== false && document.status === 'Published';
         });
+        return createResponse({ documents });
       }
       if (section === 'meetings') return createResponse(getVisibleRecords(meetingsByProject[projectId] || [], user));
       if (section === 'updates') return createResponse(getVisibleRecords(updatesByProject[projectId] || [], user));

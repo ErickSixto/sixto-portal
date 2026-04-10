@@ -4,6 +4,8 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 
 Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
 
+The IDs below are the Notion data source / collection IDs used for workspace documentation and MCP workflows. The app runtime in `backend/server.py` uses the Notion REST API database IDs, so those values are expected to differ.
+
 ## Database IDs (Data Source / Collection IDs)
 
 | Database | Collection ID |

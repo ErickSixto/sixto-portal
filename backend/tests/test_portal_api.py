@@ -80,6 +80,9 @@ class TestHealthAndAuth:
         assert "token" in data
         assert data["user"]["role"] == "admin"
         assert data["user"]["email"] == ADMIN_EMAIL
+        assert "project_ids" in data["user"]
+        assert "default_project_id" in data["user"]
+        assert data["user"]["access_scope"] == "Admin"
         print(f"✓ Admin verify passed, role: {data['user']['role']}")
         return data["token"]
     
@@ -103,6 +106,9 @@ class TestHealthAndAuth:
         assert "token" in data
         assert data["user"]["role"] == "client"
         assert data["user"]["email"] == CLIENT_EMAIL
+        assert len(data["user"]["project_ids"]) >= 1
+        assert data["user"]["default_project_id"] in data["user"]["project_ids"]
+        assert data["user"]["access_scope"] in ("Project-specific", "Client-wide")
         print(f"✓ Client verify passed, role: {data['user']['role']}")
         return data["token"]
 
@@ -262,10 +268,26 @@ class TestProjectTabs:
         )
         assert response.status_code == 200
         data = response.json()
-        assert "deliverable_files" in data
-        assert "proposals" in data
-        assert "contracts" in data
-        print(f"✓ Documents endpoint returns structured data")
+        assert "documents" in data
+        assert isinstance(data["documents"], list)
+        print(f"✓ Documents endpoint returns {len(data['documents'])} document(s)")
+
+    def test_roadmap_endpoint(self, admin_token):
+        """Test roadmap tab loads"""
+        projects_response = requests.get(
+            f"{BASE_URL}/api/portal/projects",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
+        project_id = projects_response.json()[0]["id"]
+
+        response = requests.get(
+            f"{BASE_URL}/api/portal/project/{project_id}/roadmap",
+            headers={"Authorization": f"Bearer {admin_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        print(f"✓ Roadmap endpoint returns {len(data)} milestone(s)")
     
     def test_meetings_endpoint(self, admin_token):
         """Test meetings tab loads"""

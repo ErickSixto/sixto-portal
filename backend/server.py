@@ -39,6 +39,9 @@ NOTION_DB = {
     "updates": "81df2382-16fc-4ac2-bf05-587a7a284973",
     "portal_config": "1612bd69-1515-4eb0-a57e-14833acccfb7",
     "requests": "a63ff4cb-86b4-48ff-b52f-3f9110dded88",
+    "portal_users": "ad64ce15-894a-4d2b-a21c-ae05ce319742",
+    "portal_documents": "cfa49ec1-ee0f-4c3a-9342-46399071d1e1",
+    "milestones": "170f3736-96c5-45c4-a03a-c65cc4dc4e1e",
 }
 
 
@@ -99,15 +102,18 @@ def parse_page(page, prop_map):
 
 
 CLIENT_PROPS = {"name": "Company Name", "contact_person": "Contact Person", "email": "Email", "source": "Source", "status": "Status", "industry": "Industry", "stripe": "Stripe", "projects": "Project"}
-PROJECT_PROPS = {"name": "Name", "client": "Client", "status": "Status", "project_type": "Project Type", "branch": "Branch", "project_date": "Project Date"}
+PROJECT_PROPS = {"name": "Name", "client": "Client", "status": "Status", "project_type": "Project Type", "branch": "Branch", "project_date": "Project Date", "project_health": "Project Health", "client_facing_summary": "Client-Facing Summary", "primary_owner": "Primary Owner", "milestones": "Milestones"}
 PROJECT_PROPS_ADMIN = {**PROJECT_PROPS, "estimated_amount": "Estimated Amount"}
-TASK_PROPS = {"name": "Name", "project": "Project", "status": "Status", "priority": "Priority", "due_date": "Due Date", "phase": "Phase", "client_visible": "Client Visible", "tag": "Tag", "notes": "Notes", "assignee": "Assignee", "files": "Files & media"}
+TASK_PROPS = {"name": "Name", "project": "Project", "status": "Status", "priority": "Priority", "due_date": "Due Date", "phase": "Phase", "client_visible": "Client Visible", "tag": "Tag", "notes": "Notes", "assignee": "Assignee", "files": "Files & media", "customer_action_needed": "Customer Action Needed", "blocked_reason": "Blocked Reason", "client_facing_notes": "Client-Facing Notes", "sort_order": "Sort Order"}
 INVOICE_PROPS = {"no": "No", "project": "Project", "amount": "Fix cost", "paid": "Paid", "payment_status": "Payment Status", "due_date": "Due Date", "issued_on": "Issued on", "stripe_invoice_id": "Stripe Invoice ID", "stripe_invoice_url": "Stripe Invoice URL", "type": "Type", "issued_to": "Issued to", "source": "Source", "files": "Files"}
 MEETING_PROPS = {"name": "Name", "project": "Project", "date_time": "Date & Time", "meeting_link": "Meeting Link", "status": "Status", "client_visible": "Client Visible", "meeting_summary": "Meeting Summary", "notes": "Notes", "participant": "Participant"}
 DELIVERABLE_PROPS = {"name": "Name", "project": "Project", "status": "Status", "due_date": "Due Date", "delivered_date": "Delivered Date", "description": "Description", "files": "Files", "client_visible": "Client Visible"}
-UPDATE_PROPS = {"name": "Name", "project": "Project", "date": "Date", "content": "Content", "type": "Type", "client_visible": "Client Visible"}
-PORTAL_CONFIG_PROPS = {"name": "Name", "project": "Project", "client": "Client", "portal_title": "Portal Title", "portal_intro": "Portal Intro", "contact_email": "Contact Email", "show_tasks": "Show Tasks", "show_meetings": "Show Meetings", "show_invoices": "Show Invoices", "show_deliverables": "Show Deliverables", "show_roadmap": "Show Roadmap", "show_documents": "Show Documents", "show_feedback": "Show Feedback", "cta_label": "CTA Label", "cta_url": "CTA URL", "support_contact": "Support Contact", "status": "Status"}
-REQUEST_PROPS = {"name": "Name", "project": "Project", "client": "Client", "type": "Type", "priority": "Priority", "description": "Description", "status": "Status", "date": "Date"}
+UPDATE_PROPS = {"name": "Name", "project": "Project", "date": "Date", "content": "Content", "type": "Type", "client_visible": "Client Visible", "author": "Author", "pinned": "Pinned", "excerpt": "Excerpt", "cta_label": "CTA Label", "cta_url": "CTA URL"}
+PORTAL_CONFIG_PROPS = {"name": "Name", "project": "Project", "client": "Client", "portal_title": "Portal Title", "portal_intro": "Portal Intro", "contact_email": "Contact Email", "show_tasks": "Show Tasks", "show_meetings": "Show Meetings", "show_invoices": "Show Invoices", "show_deliverables": "Show Deliverables", "show_roadmap": "Show Roadmap", "show_documents": "Show Documents", "show_feedback": "Show Feedback", "cta_label": "CTA Label", "cta_url": "CTA URL", "support_contact": "Support Contact", "status": "Status", "default_landing_tab": "Default Landing Tab", "support_sla_text": "Support SLA Text", "escalation_contact": "Escalation Contact", "welcome_checklist_enabled": "Welcome Checklist Enabled"}
+REQUEST_PROPS = {"name": "Name", "project": "Project", "client": "Client", "type": "Type", "priority": "Priority", "description": "Description", "status": "Status", "date": "Date", "assigned_to": "Assigned To", "requester_email": "Requester Email", "client_facing_status": "Client-Facing Status", "target_response_date": "Target Response Date", "resolved_date": "Resolved Date"}
+PORTAL_USER_PROPS = {"name": "Name", "email": "Email", "status": "Status", "role": "Role", "client": "Client", "accessible_projects": "Accessible Projects", "default_project": "Default Project", "access_scope": "Access Scope", "last_login_at": "Last Login At", "notes": "Notes"}
+PORTAL_DOCUMENT_PROPS = {"name": "Name", "project": "Project", "client": "Client", "category": "Category", "client_facing_title": "Client-Facing Title", "summary": "Summary", "files": "Files", "external_url": "External URL", "client_visible": "Client Visible", "sort_order": "Sort Order", "status": "Status", "published_at": "Published At", "source_system": "Source System", "external_id": "External ID", "owner": "Owner", "source_last_synced_at": "Source Last Synced At", "last_reviewed_at": "Last Reviewed At", "needs_review": "Needs Review", "deliverable_source": "Deliverable Source", "proposal_source": "Proposal Source", "contract_source": "Contract Source"}
+MILESTONE_PROPS = {"name": "Name", "project": "Project", "client": "Client", "status": "Status", "milestone_type": "Milestone Type", "target_date": "Target Date", "completed_date": "Completed Date", "summary": "Summary", "owner": "Owner", "client_visible": "Client Visible", "sort_order": "Sort Order", "customer_action_needed": "Customer Action Needed", "cta_label": "CTA Label", "cta_url": "CTA URL"}
 
 
 class NotionCache:
@@ -224,6 +230,10 @@ async def get_current_user(request: Request):
             "name": user.get("name", ""),
             "client_notion_id": user.get("client_notion_id"),
             "project_ids": user.get("project_ids", []),
+            "default_project_id": user.get("default_project_id"),
+            "access_scope": user.get("access_scope"),
+            "portal_user_notion_id": user.get("portal_user_notion_id"),
+            "notion_role": user.get("notion_role"),
         }
     except pyjwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -237,17 +247,10 @@ def require_admin(user):
 
 
 async def get_accessible_project(project_id: str, user, prop_map=None):
-    if user.get("role") == "admin":
-        pages = await notion_query("project")
-    else:
-        client_notion_id = user.get("client_notion_id")
-        if not client_notion_id:
-            raise HTTPException(status_code=403, detail="No client access configured")
-        pages = await notion_query("project", {"property": "Client", "relation": {"contains": client_notion_id}})
-
-    for page in pages:
-        if page.get("id") == project_id:
-            return parse_page(page, prop_map or PROJECT_PROPS)
+    projects = await get_user_projects(user, prop_map=prop_map or PROJECT_PROPS)
+    for project in projects:
+        if project.get("id") == project_id:
+            return project
 
     raise HTTPException(status_code=404, detail="Project not found")
 
@@ -256,6 +259,142 @@ def get_date_start(value):
     if isinstance(value, dict):
         return value.get("start")
     return value
+
+
+def first_relation_id(values):
+    if isinstance(values, list) and values:
+        return values[0]
+    return None
+
+
+def normalize_app_role(notion_role: Optional[str], admin_override: bool = False):
+    if admin_override:
+        return "admin"
+    if notion_role in ("Admin", "Internal"):
+        return "admin"
+    return "client"
+
+
+def display_document_title(document):
+    return document.get("client_facing_title") or document.get("name") or "Untitled Document"
+
+
+def sort_value(value, fallback=""):
+    if value is None:
+        return fallback
+    return value
+
+
+async def notion_update_page(page_id, properties):
+    if not NOTION_API_KEY:
+        return
+    headers = {
+        "Authorization": f"Bearer {NOTION_API_KEY}",
+        "Notion-Version": NOTION_VERSION,
+        "Content-Type": "application/json",
+    }
+    body = {"properties": properties}
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.patch(f"{NOTION_BASE}/pages/{page_id}", headers=headers, json=body)
+        if resp.status_code not in (200, 201):
+            print(f"Notion update error ({page_id}): {resp.status_code} - {resp.text[:200]}")
+        else:
+            cache.invalidate()
+
+
+async def resolve_identity(email: str):
+    admin_entry = None
+    admin_override = email == ADMIN_EMAIL
+    if not admin_override:
+        admin_entry = await db.portal_access.find_one({"email": email})
+        admin_override = bool(admin_entry and admin_entry.get("role") == "admin")
+
+    portal_users = await notion_query("portal_users", {"property": "Email", "email": {"equals": email}}, use_cache=False)
+    if portal_users:
+        portal_user = parse_page(portal_users[0], PORTAL_USER_PROPS)
+        status = portal_user.get("status") or "Active"
+        if status == "Disabled" and not admin_override:
+            raise HTTPException(status_code=403, detail="Your portal access is disabled. Please contact support.")
+        if status not in ("Active", "Invited", "Disabled"):
+            raise HTTPException(status_code=403, detail="Your portal access is not currently active. Please contact support.")
+
+        client_notion_id = first_relation_id(portal_user.get("client"))
+        access_scope = portal_user.get("access_scope") or "Project-specific"
+        project_ids = portal_user.get("accessible_projects") or []
+
+        if client_notion_id and (access_scope == "Client-wide" or not project_ids):
+            projects = await notion_query("project", {"property": "Client", "relation": {"contains": client_notion_id}})
+            project_ids = [page.get("id") for page in projects]
+
+        default_project_id = first_relation_id(portal_user.get("default_project")) or (project_ids[0] if project_ids else None)
+        role = normalize_app_role(portal_user.get("role"), admin_override=admin_override)
+        name = portal_user.get("name") or email.split("@")[0]
+
+        return {
+            "role": role,
+            "notion_role": portal_user.get("role"),
+            "name": name,
+            "client_notion_id": client_notion_id,
+            "project_ids": project_ids,
+            "default_project_id": default_project_id,
+            "access_scope": access_scope,
+            "portal_user_notion_id": portal_users[0].get("id"),
+            "source": "portal_user",
+        }
+
+    if admin_override:
+        return {
+            "role": "admin",
+            "notion_role": "Admin",
+            "name": (admin_entry or {}).get("name") or "Erick Sixto",
+            "client_notion_id": None,
+            "project_ids": [],
+            "default_project_id": None,
+            "access_scope": "Admin",
+            "portal_user_notion_id": None,
+            "source": "admin_access",
+        }
+
+    clients = await notion_query("client", {"property": "Email", "rich_text": {"equals": email}}, use_cache=False)
+    if not clients:
+        raise HTTPException(status_code=404, detail="No account found with this email address")
+
+    client_data = parse_page(clients[0], CLIENT_PROPS)
+    if client_data.get("status") and client_data["status"] not in ("Active",):
+        raise HTTPException(status_code=403, detail="Your account is not currently active. Please contact support.")
+
+    project_pages = await notion_query("project", {"property": "Client", "relation": {"contains": clients[0].get("id")}})
+    project_ids = [page.get("id") for page in project_pages]
+
+    return {
+        "role": "client",
+        "notion_role": "Client",
+        "name": client_data.get("contact_person") or client_data.get("name") or email.split("@")[0],
+        "client_notion_id": clients[0].get("id"),
+        "project_ids": project_ids,
+        "default_project_id": project_ids[0] if project_ids else None,
+        "access_scope": "Client-wide",
+        "portal_user_notion_id": None,
+        "source": "legacy_client",
+    }
+
+
+async def get_user_projects(user, prop_map=None):
+    if user.get("role") == "admin":
+        pages = await notion_query("project")
+    elif user.get("client_notion_id"):
+        pages = await notion_query("project", {"property": "Client", "relation": {"contains": user["client_notion_id"]}})
+    else:
+        pages = await notion_query("project")
+
+    projects = [parse_page(page, prop_map or PROJECT_PROPS) for page in pages]
+    if user.get("role") == "admin":
+        return projects
+
+    allowed_ids = set(user.get("project_ids") or [])
+    if not allowed_ids:
+        return []
+    return [project for project in projects if project.get("id") in allowed_ids]
 
 
 def is_open_task(task):
@@ -322,35 +461,21 @@ async def health():
 async def request_magic_link(req: MagicLinkRequest):
     email = req.email.strip().lower()
     code = secrets.token_hex(3).upper()[:6]
-
-    # Check admin list (env + MongoDB)
-    is_admin = email == ADMIN_EMAIL
-    if not is_admin:
-        admin_entry = await db.portal_access.find_one({"email": email})
-        if admin_entry:
-            is_admin = admin_entry.get("role") == "admin"
-
-    if is_admin:
-        await db.magic_codes.insert_one({"email": email, "code": code, "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10), "used": False, "role": "admin"})
-        return {"success": True, "message": "Magic link code generated. Check your email.", "mock_code": code}
-
-    # Check Notion Client DB
-    clients = await notion_query("client", {"property": "Email", "rich_text": {"equals": email}})
-    if not clients:
-        raise HTTPException(status_code=404, detail="No account found with this email address")
-
-    client_data = parse_page(clients[0], CLIENT_PROPS)
-
-    # Only allow Active clients
-    if client_data.get("status") and client_data["status"] not in ("Active",):
-        raise HTTPException(status_code=403, detail="Your account is not currently active. Please contact support.")
-
+    identity = await resolve_identity(email)
     await db.magic_codes.insert_one({
-        "email": email, "code": code,
-        "client_notion_id": clients[0].get("id"),
-        "client_name": client_data.get("name", ""),
+        "email": email,
+        "code": code,
+        "role": identity["role"],
+        "notion_role": identity.get("notion_role"),
+        "client_notion_id": identity.get("client_notion_id"),
+        "portal_user_notion_id": identity.get("portal_user_notion_id"),
+        "client_name": identity.get("name", ""),
+        "project_ids": identity.get("project_ids", []),
+        "default_project_id": identity.get("default_project_id"),
+        "access_scope": identity.get("access_scope"),
+        "identity_source": identity.get("source"),
         "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10),
-        "used": False, "role": "client",
+        "used": False,
     })
     return {"success": True, "message": "Magic link code generated. Check your email.", "mock_code": code}
 
@@ -367,14 +492,25 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
     await db.magic_codes.update_one({"_id": magic["_id"]}, {"$set": {"used": True}})
 
     user = await db.users.find_one({"email": email})
-    is_admin = email == ADMIN_EMAIL or magic.get("role") == "admin"
-    determined_role = "admin" if is_admin else "client"
+    determined_role = magic.get("role", "client")
     resolved_client_notion_id = magic.get("client_notion_id") or (user.get("client_notion_id") if user else None)
+    resolved_project_ids = magic.get("project_ids") or (user.get("project_ids") if user else []) or []
+    resolved_default_project_id = magic.get("default_project_id") or (user.get("default_project_id") if user else None)
+    resolved_access_scope = magic.get("access_scope") or (user.get("access_scope") if user else None)
+    resolved_portal_user_notion_id = magic.get("portal_user_notion_id") or (user.get("portal_user_notion_id") if user else None)
+    resolved_notion_role = magic.get("notion_role") or (user.get("notion_role") if user else None)
+
     if not user:
         user_data = {
-            "email": email, "role": determined_role,
+            "email": email,
+            "role": determined_role,
             "name": magic.get("client_name", email.split("@")[0]),
             "client_notion_id": resolved_client_notion_id,
+            "project_ids": resolved_project_ids,
+            "default_project_id": resolved_default_project_id,
+            "access_scope": resolved_access_scope,
+            "portal_user_notion_id": resolved_portal_user_notion_id,
+            "notion_role": resolved_notion_role,
             "created_at": datetime.now(timezone.utc),
         }
         result = await db.users.insert_one(user_data)
@@ -386,16 +522,27 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
             updates["role"] = determined_role
         if resolved_client_notion_id and user.get("client_notion_id") != resolved_client_notion_id:
             updates["client_notion_id"] = resolved_client_notion_id
+        if user.get("project_ids", []) != resolved_project_ids:
+            updates["project_ids"] = resolved_project_ids
+        if resolved_default_project_id and user.get("default_project_id") != resolved_default_project_id:
+            updates["default_project_id"] = resolved_default_project_id
+        if resolved_access_scope and user.get("access_scope") != resolved_access_scope:
+            updates["access_scope"] = resolved_access_scope
+        if resolved_portal_user_notion_id and user.get("portal_user_notion_id") != resolved_portal_user_notion_id:
+            updates["portal_user_notion_id"] = resolved_portal_user_notion_id
+        if resolved_notion_role and user.get("notion_role") != resolved_notion_role:
+            updates["notion_role"] = resolved_notion_role
         if updates:
             await db.users.update_one({"_id": user["_id"]}, {"$set": updates})
             user.update(updates)
 
-    project_ids = []
-    if user.get("client_notion_id"):
-        projects = await notion_query("project", {"property": "Client", "relation": {"contains": user["client_notion_id"]}})
-        project_ids = [p.get("id") for p in projects]
-        await db.users.update_one({"_id": user["_id"]}, {"$set": {"project_ids": project_ids}})
-        user["project_ids"] = project_ids
+    if user.get("portal_user_notion_id"):
+        try:
+            await notion_update_page(user["portal_user_notion_id"], {
+                "Last Login At": {"date": {"start": datetime.now(timezone.utc).isoformat()}},
+            })
+        except Exception as exc:
+            print(f"Failed to update portal user last login: {exc}")
 
     user_id = str(user["_id"])
     token = create_token(user_id, email, determined_role, user.get("client_notion_id"))
@@ -404,7 +551,18 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
 
     return {
         "success": True,
-        "user": {"id": user_id, "email": email, "name": user.get("name", ""), "role": determined_role, "project_ids": project_ids, "client_notion_id": user.get("client_notion_id")},
+        "user": {
+            "id": user_id,
+            "email": email,
+            "name": user.get("name", ""),
+            "role": determined_role,
+            "project_ids": user.get("project_ids", []),
+            "client_notion_id": user.get("client_notion_id"),
+            "default_project_id": user.get("default_project_id"),
+            "access_scope": user.get("access_scope"),
+            "portal_user_notion_id": user.get("portal_user_notion_id"),
+            "notion_role": user.get("notion_role"),
+        },
         "token": token,
     }
 
@@ -423,13 +581,11 @@ async def logout(response: Response):
 @app.get("/api/portal/projects")
 async def get_portal_projects(request: Request):
     user = await get_current_user(request)
-    if user["role"] == "admin":
-        pages = await notion_query("project")
-    else:
-        if not user.get("client_notion_id"):
-            return []
-        pages = await notion_query("project", {"property": "Client", "relation": {"contains": user["client_notion_id"]}})
-    return [parse_page(p, PROJECT_PROPS) for p in pages]
+    projects = await get_user_projects(user)
+    default_project_id = user.get("default_project_id")
+    if default_project_id:
+        projects.sort(key=lambda project: (project.get("id") != default_project_id, sort_value(project.get("name"), "~")))
+    return projects
 
 
 @app.get("/api/portal/project/{project_id}/config")
@@ -441,7 +597,7 @@ async def get_portal_config(project_id: str, request: Request):
         return parse_page(configs[0], PORTAL_CONFIG_PROPS)
     return {"id": None, "portal_title": "Project Portal", "portal_intro": "Welcome to your project portal",
             "show_tasks": True, "show_meetings": True, "show_invoices": True, "show_deliverables": True,
-            "show_roadmap": True, "show_documents": True, "show_feedback": True}
+            "show_roadmap": True, "show_documents": True, "show_feedback": True, "default_landing_tab": "Overview"}
 
 
 @app.get("/api/portal/project/{project_id}/dashboard")
@@ -460,13 +616,20 @@ async def get_dashboard(project_id: str, request: Request):
             {"property": "Project", "relation": {"contains": project_id}},
             {"property": "Client Visible", "checkbox": {"equals": True}},
         ]}
+    milestones_filter = {"property": "Project", "relation": {"contains": project_id}}
+    if user["role"] != "admin":
+        milestones_filter = {"and": [
+            {"property": "Project", "relation": {"contains": project_id}},
+            {"property": "Client Visible", "checkbox": {"equals": True}},
+        ]}
 
-    tasks = await notion_query("task", tasks_filter, sorts=[{"property": "Due Date", "direction": "ascending"}])
+    tasks = await notion_query("task", tasks_filter, sorts=[{"property": "Sort Order", "direction": "ascending"}, {"property": "Due Date", "direction": "ascending"}])
     task_list = [parse_page(t, TASK_PROPS) for t in tasks]
     total_tasks = len(task_list)
     completed_tasks = len([t for t in task_list if t.get("status") == "Done"])
     open_tasks = [t for t in task_list if is_open_task(t)]
     blocked_tasks = len([t for t in open_tasks if t.get("status") == "Blocked"])
+    client_action_tasks = len([t for t in open_tasks if t.get("customer_action_needed")])
     today_iso = datetime.now(timezone.utc).date().isoformat()
     overdue_tasks = len([
         t for t in open_tasks
@@ -481,6 +644,17 @@ async def get_dashboard(project_id: str, request: Request):
     del_list = [parse_page(d, DELIVERABLE_PROPS) for d in deliverables]
     total_del = len(del_list)
     delivered = len([d for d in del_list if d.get("status") in ("Delivered", "Accepted")])
+
+    milestones_raw = await notion_query("milestones", milestones_filter, sorts=[{"property": "Sort Order", "direction": "ascending"}, {"property": "Target Date", "direction": "ascending"}])
+    milestone_list = [parse_page(m, MILESTONE_PROPS) for m in milestones_raw]
+    total_milestones = len(milestone_list)
+    completed_milestones = len([m for m in milestone_list if m.get("status") == "Completed"])
+    at_risk_milestones = len([m for m in milestone_list if m.get("status") == "At Risk"])
+    next_milestone = next((
+        m for m in milestone_list
+        if m.get("status") != "Completed" and get_date_start(m.get("target_date")) and get_date_start(m.get("target_date"))[:10] >= today_iso
+    ), None)
+    client_action_milestones = len([m for m in milestone_list if m.get("customer_action_needed") and m.get("status") != "Completed"])
 
     updates = await notion_query("updates", {"and": [
         {"property": "Project", "relation": {"contains": project_id}},
@@ -505,12 +679,15 @@ async def get_dashboard(project_id: str, request: Request):
     return {
         "project": project, "recent_updates": recent, "upcoming_meetings": upcoming_meetings,
         "metrics": {"tasks_completed": completed_tasks, "tasks_total": total_tasks,
-                     "deliverables_delivered": delivered, "deliverables_total": total_del},
-        "attention": {"open_tasks": len(open_tasks), "blocked_tasks": blocked_tasks, "overdue_tasks": overdue_tasks},
+                     "deliverables_delivered": delivered, "deliverables_total": total_del,
+                     "milestones_completed": completed_milestones, "milestones_total": total_milestones},
+        "attention": {"open_tasks": len(open_tasks), "blocked_tasks": blocked_tasks, "overdue_tasks": overdue_tasks,
+                      "at_risk_milestones": at_risk_milestones, "client_action_items": client_action_tasks + client_action_milestones},
         "highlights": {
             "next_due_task": next_due_task,
             "next_meeting": upcoming_meetings[0] if upcoming_meetings else None,
             "latest_update": latest_update,
+            "next_milestone": next_milestone,
         },
     }
 
@@ -522,7 +699,7 @@ async def get_tasks(project_id: str, request: Request):
     f = {"and": [{"property": "Project", "relation": {"contains": project_id}}, {"property": "Client Visible", "checkbox": {"equals": True}}]}
     if user["role"] == "admin":
         f = {"property": "Project", "relation": {"contains": project_id}}
-    return [parse_page(p, TASK_PROPS) for p in await notion_query("task", f)]
+    return [parse_page(p, TASK_PROPS) for p in await notion_query("task", f, sorts=[{"property": "Sort Order", "direction": "ascending"}, {"property": "Due Date", "direction": "ascending"}])]
 
 
 @app.get("/api/portal/project/{project_id}/deliverables")
@@ -572,30 +749,35 @@ async def get_meetings(project_id: str, request: Request):
 async def get_documents(project_id: str, request: Request):
     user = await get_current_user(request)
     await get_accessible_project(project_id, user)
-    deliverables = await notion_query("deliverables", {"and": [
-        {"property": "Project", "relation": {"contains": project_id}},
-        {"property": "Client Visible", "checkbox": {"equals": True}},
-    ]})
-    docs = []
-    for d in deliverables:
-        parsed = parse_page(d, DELIVERABLE_PROPS)
-        if parsed.get("files"):
-            docs.append(parsed)
+    doc_filter = {"property": "Project", "relation": {"contains": project_id}}
+    if user["role"] != "admin":
+        doc_filter = {"and": [
+            {"property": "Project", "relation": {"contains": project_id}},
+            {"property": "Client Visible", "checkbox": {"equals": True}},
+            {"property": "Status", "select": {"equals": "Published"}},
+        ]}
 
-    proposals = await notion_query("proposal", {"property": "Project", "relation": {"contains": project_id}})
-    contracts = await notion_query("contract", {"property": "Project", "relation": {"contains": project_id}})
+    documents = [parse_page(page, PORTAL_DOCUMENT_PROPS) for page in await notion_query(
+        "portal_documents",
+        doc_filter,
+        sorts=[{"property": "Sort Order", "direction": "ascending"}, {"property": "Published At", "direction": "descending"}],
+    )]
 
-    prop_list = []
-    for p in proposals:
-        pr = p.get("properties", {})
-        prop_list.append({"id": p.get("id"), "name": extract_prop(pr.get("Name")), "status": extract_prop(pr.get("Status")), "date": extract_prop(pr.get("Date")), "files": extract_prop(pr.get("Files")), "type": "Proposal"})
+    for document in documents:
+        document["title"] = display_document_title(document)
+        document["primary_url"] = document.get("external_url") or ((document.get("files") or [{}])[0].get("url") if document.get("files") else None)
 
-    contract_list = []
-    for c in contracts:
-        pr = c.get("properties", {})
-        contract_list.append({"id": c.get("id"), "name": extract_prop(pr.get("Name")), "status": extract_prop(pr.get("Status")), "date": extract_prop(pr.get("Date")), "files": extract_prop(pr.get("Files")), "type": "Contract"})
+    return {"documents": documents}
 
-    return {"deliverable_files": docs, "proposals": prop_list, "contracts": contract_list}
+
+@app.get("/api/portal/project/{project_id}/roadmap")
+async def get_roadmap(project_id: str, request: Request):
+    user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
+    f = {"property": "Project", "relation": {"contains": project_id}}
+    if user["role"] != "admin":
+        f = {"and": [{"property": "Project", "relation": {"contains": project_id}}, {"property": "Client Visible", "checkbox": {"equals": True}}]}
+    return [parse_page(p, MILESTONE_PROPS) for p in await notion_query("milestones", f, sorts=[{"property": "Sort Order", "direction": "ascending"}, {"property": "Target Date", "direction": "ascending"}])]
 
 
 @app.post("/api/portal/project/{project_id}/requests")
@@ -609,12 +791,15 @@ async def submit_request(project_id: str, req: SubmitRequestModel, request: Requ
         "Priority": {"select": {"name": req.priority}},
         "Description": {"rich_text": [{"text": {"content": req.description}}]},
         "Status": {"select": {"name": "New"}},
+        "Client-Facing Status": {"select": {"name": "Received"}},
         "Date": {"date": {"start": today}},
     }
     if project_id:
         properties["Project"] = {"relation": [{"id": project_id}]}
     if user.get("client_notion_id"):
         properties["Client"] = {"relation": [{"id": user["client_notion_id"]}]}
+    if user.get("email"):
+        properties["Requester Email"] = {"email": user["email"]}
     await notion_create_page("requests", properties)
     return {"success": True, "message": "Request submitted successfully"}
 
