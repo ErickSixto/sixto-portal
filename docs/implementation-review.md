@@ -17,6 +17,18 @@ This repository now contains an Emergent-generated application scaffold alongsid
 
 That means the highest-value review is still a contract-and-implementation audit. The biggest risks today are inconsistent requirements, missing data contracts, UX behaviors that are implied but not fully defined, and drift between the generated app and the original docs.
 
+## Progress Since Review
+
+Several of the highest-value fixes from this review have now been implemented in the codebase:
+
+- project-scoped portal endpoints now validate access against the signed-in user's client membership
+- the project detail page now supports URL-based tab navigation and a multi-project switcher
+- admin dashboards now include shared search, filter, and summary patterns across projects, clients, billing, portals, and access
+- the task experience now includes search, status filtering, phase filtering, and grouped task sections
+- project billing is now restricted to admins and only appears in the project view when both the portal config and user role allow it
+
+The biggest remaining gaps are still the canonical data contract, the underdefined documents model, and a clearer decision on which admin edits should happen inside the app versus directly in Notion.
+
 ---
 
 ## Executive Assessment

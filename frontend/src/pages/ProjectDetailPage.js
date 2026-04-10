@@ -6,13 +6,15 @@ import {
   ArrowLeft, LogOut, LayoutDashboard, Package, FileText, Calendar,
   Bell, MessageSquare, CheckCircle2, Clock, Loader2, XCircle,
   AlertCircle, Download, ExternalLink, Users, Send, ChevronDown,
-  ChevronRight, Circle, MinusCircle, Folder, ListChecks
+  ChevronRight, Circle, MinusCircle, Folder, ListChecks, CreditCard,
+  Search, X,
 } from 'lucide-react';
 
 const TABS = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'tasks', label: 'Tasks', icon: ListChecks },
   { key: 'deliverables', label: 'Deliverables', icon: Package },
+  { key: 'billing', label: 'Billing', icon: CreditCard },
   { key: 'documents', label: 'Documents', icon: FileText },
   { key: 'meetings', label: 'Meetings', icon: Calendar },
   { key: 'updates', label: 'Updates', icon: Bell },
@@ -41,6 +43,7 @@ function isTabVisible(tabKey, config) {
   const toggleMap = {
     tasks: config.show_tasks,
     deliverables: config.show_deliverables,
+    billing: config.show_invoices,
     documents: config.show_documents,
     meetings: config.show_meetings,
     request: config.show_feedback,
@@ -261,6 +264,92 @@ function DocSection({ title, items }) {
   );
 }
 
+/* ─── BILLING TAB ─── */
+function BillingTab({ projectId }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api(`/api/portal/project/${projectId}/billing`)
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [projectId]);
+
+  if (loading) return <Spinner />;
+
+  const summary = data?.summary || { total_billed: 0, total_paid: 0, outstanding: 0 };
+  const invoices = data?.invoices || [];
+
+  if (invoices.length === 0) {
+    return <EmptyState text="No invoices linked to this project." icon={CreditCard} />;
+  }
+
+  return (
+    <div className="space-y-5" data-testid="billing-tab">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <MetricCard label="Total Billed" value={`$${(summary.total_billed || 0).toLocaleString()}`} />
+        <MetricCard label="Total Paid" value={`$${(summary.total_paid || 0).toLocaleString()}`} sub="received" />
+        <MetricCard label="Outstanding" value={`$${(summary.outstanding || 0).toLocaleString()}`} sub="remaining" />
+      </div>
+
+      <div className="bg-dark-700 rounded-xl border border-dark-500/50 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-dark-500/50">
+                <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Invoice</th>
+                <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Status</th>
+                <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Due Date</th>
+                <th className="text-right px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Amount</th>
+                <th className="text-right px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-dark-500/30">
+              {invoices.map((invoice, index) => {
+                const status = invoice.payment_status || (invoice.paid ? 'Paid' : 'Draft');
+                const statusClass = {
+                  Draft: 'bg-warm-500/15 text-warm-400',
+                  Sent: 'bg-blue-500/15 text-blue-400',
+                  Paid: 'bg-green-500/15 text-green-400',
+                  Overdue: 'bg-red-500/15 text-red-400',
+                  Cancelled: 'bg-warm-600/15 text-warm-500',
+                }[status] || 'bg-warm-500/15 text-warm-400';
+
+                return (
+                  <tr key={invoice.id} className={index % 2 === 1 ? 'bg-dark-800/40' : ''}>
+                    <td className="px-5 py-3.5 text-sm font-medium text-warm-100">{invoice.no || '—'}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusClass}`}>{status}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-xs text-warm-400">{invoice.due_date?.start || '—'}</td>
+                    <td className="px-5 py-3.5 text-right text-sm text-warm-100">${(invoice.amount || 0).toLocaleString()}</td>
+                    <td className="px-5 py-3.5 text-right">
+                      {invoice.stripe_invoice_url ? (
+                        <a
+                          href={invoice.stripe_invoice_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent-light"
+                        >
+                          Open
+                          <ExternalLink size={12} />
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-warm-600">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MEETINGS TAB ─── */
 const mtgStatusConfig = {
   'Scheduled': { color: 'bg-blue-500/15 text-blue-400', icon: Clock },
@@ -357,7 +446,6 @@ function TaskRow({ task, isExpanded, onToggle }) {
   const cfg = taskStatusConfig[task.status] || taskStatusConfig['Not Started'];
   const Icon = cfg.icon;
   const isWontDo = task.status === "Won't Do";
-  const hasDetail = task.notes || (task.files && task.files.length > 0) || (task.assignee && task.assignee.length > 0);
 
   return (
     <div data-testid={`task-${task.id}`} className={isWontDo ? 'opacity-50' : ''}>
@@ -438,11 +526,29 @@ const SORT_OPTIONS = [
   { key: 'status', label: 'Status' },
 ];
 
+function normalizeTaskPhase(phase) {
+  return phase || 'Unassigned';
+}
+
+function getOrderedPhases(tasks) {
+  const seen = new Set(tasks.map((task) => normalizeTaskPhase(task.phase)));
+  const ordered = phaseOrder.filter((phase) => seen.has(phase));
+  const remaining = [...seen]
+    .filter((phase) => !phaseOrder.includes(phase) && phase !== 'Unassigned')
+    .sort((a, b) => a.localeCompare(b));
+
+  if (seen.has('Unassigned')) remaining.push('Unassigned');
+
+  return [...ordered, ...remaining];
+}
+
 function TasksTab({ projectId }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [phaseFilter, setPhaseFilter] = useState('all');
   const [sortBy, setSortBy] = useState('default');
+  const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
@@ -452,9 +558,48 @@ function TasksTab({ projectId }) {
   if (loading) return <Spinner />;
   if (tasks.length === 0) return <EmptyState text="No tasks available." icon={ListChecks} />;
 
-  const filtered = statusFilter === 'all' ? tasks : tasks.filter(t => t.status === statusFilter);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const orderedTaskPhases = getOrderedPhases(tasks);
+  const phaseOptions = [
+    { key: 'all', label: 'All phases' },
+    ...orderedTaskPhases.map((phase) => ({ key: phase, label: phase })),
+  ];
+  const filtered = tasks.filter((task) => {
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    const taskPhase = normalizeTaskPhase(task.phase);
+    const matchesPhase = phaseFilter === 'all' || taskPhase === phaseFilter;
+
+    if (!matchesStatus || !matchesPhase) return false;
+    if (!normalizedQuery) return true;
+
+    const haystack = [
+      task.name,
+      task.notes,
+      task.tag,
+      task.status,
+      task.priority,
+      task.phase,
+      ...(task.assignee || []).map((person) => person.name),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(normalizedQuery);
+  });
 
   const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'default') {
+      const phaseRankA = orderedTaskPhases.indexOf(normalizeTaskPhase(a.phase));
+      const phaseRankB = orderedTaskPhases.indexOf(normalizeTaskPhase(b.phase));
+      if (phaseRankA !== phaseRankB) return phaseRankA - phaseRankB;
+      const statusRank = (statusWeight[a.status] ?? 5) - (statusWeight[b.status] ?? 5);
+      if (statusRank !== 0) return statusRank;
+      const dueDateA = a.due_date?.start || '9999-12-31';
+      const dueDateB = b.due_date?.start || '9999-12-31';
+      if (dueDateA !== dueDateB) return dueDateA.localeCompare(dueDateB);
+      return (a.name || '').localeCompare(b.name || '');
+    }
     if (sortBy === 'priority') return (priorityWeight[a.priority] ?? 3) - (priorityWeight[b.priority] ?? 3);
     if (sortBy === 'due_date') {
       const da = a.due_date?.start || 'z';
@@ -466,12 +611,24 @@ function TasksTab({ projectId }) {
   });
 
   const totalDone = tasks.filter(t => t.status === 'Done').length;
-  const filteredDone = filtered.filter(t => t.status === 'Done').length;
   const progress = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
+  const hasActiveFilters = statusFilter !== 'all' || phaseFilter !== 'all' || normalizedQuery.length > 0;
 
   // Count per status for filter badges
   const statusCounts = {};
   tasks.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
+  const phaseCounts = {};
+  tasks.forEach((task) => {
+    const phase = normalizeTaskPhase(task.phase);
+    phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
+  });
+  const groupedTasks = sorted.reduce((groups, task) => {
+    const phase = normalizeTaskPhase(task.phase);
+    if (!groups[phase]) groups[phase] = [];
+    groups[phase].push(task);
+    return groups;
+  }, {});
+  const orderedVisiblePhases = getOrderedPhases(sorted);
 
   return (
     <div data-testid="tasks-tab" className="space-y-5">
@@ -487,7 +644,46 @@ function TasksTab({ projectId }) {
       </div>
 
       {/* Filters + Sort */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="space-y-3 rounded-xl border border-dark-500/40 bg-dark-700 p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="relative w-full md:max-w-sm">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-500" />
+            <input
+              data-testid="task-search"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setExpandedId(null);
+              }}
+              placeholder="Search by task, notes, assignee, or tag"
+              className="w-full rounded-xl border border-dark-500/40 bg-dark-800 py-2.5 pl-9 pr-10 text-sm text-warm-100 placeholder-warm-500 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 hover:text-warm-200"
+                aria-label="Clear task search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2" data-testid="task-sort">
+            <span className="text-[10px] text-warm-500 uppercase tracking-wider">Sort</span>
+            <select
+              data-testid="sort-select"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="px-2.5 py-1.5 bg-dark-800 border border-dark-500/40 rounded-lg text-[11px] text-warm-200 focus:outline-none focus:border-accent/40"
+            >
+              {SORT_OPTIONS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
+          </div>
+        </div>
+
         <div className="flex items-center gap-1.5 flex-wrap" data-testid="task-status-filters">
           {STATUS_FILTERS.map(f => {
             const count = f.key === 'all' ? tasks.length : (statusCounts[f.key] || 0);
@@ -510,16 +706,57 @@ function TasksTab({ projectId }) {
             );
           })}
         </div>
-        <div className="flex items-center gap-2" data-testid="task-sort">
-          <span className="text-[10px] text-warm-500 uppercase tracking-wider">Sort</span>
-          <select
-            data-testid="sort-select"
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            className="px-2.5 py-1.5 bg-dark-700 border border-dark-500/40 rounded-lg text-[11px] text-warm-200 focus:outline-none focus:border-accent/40"
-          >
-            {SORT_OPTIONS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
+
+        <div className="flex items-center gap-1.5 flex-wrap" data-testid="task-phase-filters">
+          {phaseOptions.map((option) => {
+            const count = option.key === 'all' ? tasks.length : (phaseCounts[option.key] || 0);
+            if (option.key !== 'all' && count === 0) return null;
+            const active = phaseFilter === option.key;
+
+            return (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => {
+                  setPhaseFilter(option.key);
+                  setExpandedId(null);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                  active
+                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                    : 'bg-dark-800 text-warm-400 border border-dark-500/40 hover:text-warm-200 hover:border-dark-400'
+                }`}
+              >
+                {option.label}
+                <span className={`ml-1.5 ${active ? 'text-blue-300/80' : 'text-warm-600'}`}>{count}</span>
+              </button>
+            );
+          })}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('all');
+                setPhaseFilter('all');
+                setSearchQuery('');
+                setExpandedId(null);
+              }}
+              className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-warm-500 hover:text-warm-200"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 text-[11px] text-warm-500 flex-wrap">
+          <span>
+            Showing {sorted.length} of {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+          </span>
+          {hasActiveFilters && (
+            <span>
+              Filters: {statusFilter !== 'all' ? statusFilter : 'Any status'} • {phaseFilter !== 'all' ? phaseFilter : 'Any phase'}
+            </span>
+          )}
         </div>
       </div>
 
@@ -529,14 +766,30 @@ function TasksTab({ projectId }) {
           <p className="text-warm-500 text-sm">No tasks match this filter.</p>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {sorted.map(t => (
-            <TaskRow
-              key={t.id}
-              task={t}
-              isExpanded={expandedId === t.id}
-              onToggle={() => setExpandedId(expandedId === t.id ? null : t.id)}
-            />
+        <div className="space-y-5">
+          {orderedVisiblePhases.map((phase) => (
+            <section key={phase} className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-warm-100">{phase}</h3>
+                  <p className="text-[11px] text-warm-500">
+                    {groupedTasks[phase].length} task{groupedTasks[phase].length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="h-px flex-1 bg-dark-500/40" />
+              </div>
+
+              <div className="space-y-1.5">
+                {groupedTasks[phase].map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    isExpanded={expandedId === task.id}
+                    onToggle={() => setExpandedId(expandedId === task.id ? null : task.id)}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
@@ -696,10 +949,11 @@ export default function ProjectDetailPage() {
   };
 
   const visibleTabs = TABS.filter((tab) => tab.key === 'overview' || isTabVisible(tab.key, portalConfig));
+  const roleAwareTabs = visibleTabs.filter((tab) => tab.key !== 'billing' || user?.role === 'admin');
   const requestedTab = searchParams.get('tab') || 'overview';
-  const activeTab = visibleTabs.some((tab) => tab.key === requestedTab)
+  const activeTab = roleAwareTabs.some((tab) => tab.key === requestedTab)
     ? requestedTab
-    : (visibleTabs[0]?.key || 'overview');
+    : (roleAwareTabs[0]?.key || 'overview');
   const projectType = formatProjectType(project?.project_type);
 
   useEffect(() => {
@@ -722,6 +976,7 @@ export default function ProjectDetailPage() {
     overview: <OverviewTab data={dashData} config={portalConfig} />,
     tasks: <TasksTab projectId={projectId} />,
     deliverables: <DeliverablesTab projectId={projectId} />,
+    billing: <BillingTab projectId={projectId} />,
     documents: <DocumentsTab projectId={projectId} />,
     meetings: <MeetingsTab projectId={projectId} />,
     updates: <UpdatesTab projectId={projectId} />,
@@ -780,7 +1035,7 @@ export default function ProjectDetailPage() {
       {/* Tab Bar */}
       <div className="border-b border-dark-500/50 bg-dark-950/50 backdrop-blur-sm sticky top-[57px] z-20 overflow-x-auto">
         <div className="max-w-5xl mx-auto px-5 flex gap-1">
-          {visibleTabs.map(tab => {
+          {roleAwareTabs.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.key;
             return (
