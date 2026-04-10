@@ -45,7 +45,7 @@ Build a client-facing project portal for a freelance Salesforce consulting busin
 - [x] Full auth flow (magic link, mocked)
 - [x] Notion API integration (10+ databases mapped)
 - [x] Projects list page (active/completed grouping)
-- [x] Project detail page with 6 tabs (Overview, Deliverables, Documents, Meetings, Updates, Request)
+- [x] Project detail page with 7 tabs (Overview, Tasks, Deliverables, Documents, Meetings, Updates, Request)
 - [x] Admin dashboard with sidebar navigation
 - [x] Billing removed from client view
 - [x] 60:30:10 dark theme

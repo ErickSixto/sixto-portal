@@ -55,7 +55,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <img src="/logo-dark.png" alt="ES" className="w-14 h-14 mx-auto mb-4 rounded-xl" />
           <h1 className="text-xl font-bold text-warm-50 tracking-tight">Erick Sixto</h1>
-          <p className="text-warm-500 text-xs mt-1 uppercase tracking-widest">Customer Portal</p>
+          <p className="text-warm-500 text-xs mt-1 uppercase tracking-widest">Project Portal</p>
         </div>
 
         <div className="bg-dark-800 rounded-2xl p-7 border border-dark-500/50" data-testid="login-form">
