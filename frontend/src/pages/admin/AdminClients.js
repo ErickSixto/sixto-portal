@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { Search, Users, X } from 'lucide-react';
-
-function SummaryCard({ label, value, accent = 'text-warm-50' }) {
-  return (
-    <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
-      <div className="text-[10px] font-semibold text-warm-500 uppercase tracking-wider mb-2">{label}</div>
-      <div className={`text-2xl font-bold ${accent}`}>{value}</div>
-    </div>
-  );
-}
+import { Users } from 'lucide-react';
+import AdminSummaryCard from '../../components/admin/AdminSummaryCard';
+import AdminSearchInput from '../../components/admin/AdminSearchInput';
+import AdminFilterChips from '../../components/admin/AdminFilterChips';
 
 export default function AdminClients() {
   const [clients, setClients] = useState([]);
@@ -28,7 +22,10 @@ export default function AdminClients() {
   );
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
-  const statusOptions = ['all', ...new Set(clients.map((client) => client.status).filter(Boolean))];
+  const statusOptions = ['all', ...new Set(clients.map((client) => client.status).filter(Boolean))].map((status) => ({
+    key: status,
+    label: status === 'all' ? 'All statuses' : status,
+  }));
   const filteredClients = clients.filter((client) => {
     const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
     if (!matchesStatus) return false;
@@ -52,6 +49,14 @@ export default function AdminClients() {
   const activeClients = clients.filter((client) => client.status === 'Active').length;
   const inactiveClients = clients.filter((client) => client.status && client.status !== 'Active').length;
   const uniqueSources = new Set(clients.map((client) => client.source).filter(Boolean)).size;
+  const statusCounts = {
+    all: clients.length,
+    ...Object.fromEntries(
+      statusOptions
+        .filter((option) => option.key !== 'all')
+        .map((option) => [option.key, clients.filter((client) => client.status === option.key).length])
+    ),
+  };
 
   return (
     <div data-testid="admin-clients-page" className="space-y-6">
@@ -67,70 +72,32 @@ export default function AdminClients() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <SummaryCard label="Clients" value={clients.length} />
-        <SummaryCard label="Active" value={activeClients} accent="text-green-400" />
-        <SummaryCard label="Sources" value={uniqueSources} accent="text-accent" />
+        <AdminSummaryCard label="Clients" value={clients.length} />
+        <AdminSummaryCard label="Active" value={activeClients} accent="text-green-400" />
+        <AdminSummaryCard label="Sources" value={uniqueSources} accent="text-accent" />
       </div>
 
       <div className="bg-dark-700 rounded-xl border border-dark-500/50 p-4 space-y-3">
-        <div className="relative w-full lg:max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-500" />
-          <input
-            data-testid="admin-client-search"
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search company, contact, email, source, or industry"
-            className="w-full rounded-xl border border-dark-500/40 bg-dark-800 py-2.5 pl-9 pr-10 text-sm text-warm-100 placeholder-warm-500 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 hover:text-warm-200"
-              aria-label="Clear client search"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
+        <AdminSearchInput
+          testId="admin-client-search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search company, contact, email, source, or industry"
+          clearLabel="Clear client search"
+        />
 
-        <div className="flex items-center gap-2 flex-wrap" data-testid="admin-client-status-filters">
-          {statusOptions.map((status) => {
-            const count = status === 'all'
-              ? clients.length
-              : clients.filter((client) => client.status === status).length;
-            const active = statusFilter === status;
-
-            return (
-              <button
-                key={status}
-                type="button"
-                onClick={() => setStatusFilter(status)}
-                className={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                  active
-                    ? 'border-accent/30 bg-accent/15 text-accent'
-                    : 'border-dark-500/40 bg-dark-800 text-warm-400 hover:border-dark-400 hover:text-warm-200'
-                }`}
-              >
-                {status === 'all' ? 'All statuses' : status}
-                <span className={`ml-1.5 ${active ? 'text-accent/70' : 'text-warm-600'}`}>{count}</span>
-              </button>
-            );
-          })}
-          {(searchQuery || statusFilter !== 'all') && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setStatusFilter('all');
-              }}
-              className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-warm-500 hover:text-warm-200"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <AdminFilterChips
+          testId="admin-client-status-filters"
+          options={statusOptions}
+          activeValue={statusFilter}
+          onChange={setStatusFilter}
+          counts={statusCounts}
+          showClear={Boolean(searchQuery || statusFilter !== 'all')}
+          onClear={() => {
+            setSearchQuery('');
+            setStatusFilter('all');
+          }}
+        />
       </div>
 
       <div className="bg-dark-700 rounded-xl border border-dark-500/50 overflow-hidden">

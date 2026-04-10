@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { ExternalLink, Search, X } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import AdminSummaryCard from '../../components/admin/AdminSummaryCard';
+import AdminSearchInput from '../../components/admin/AdminSearchInput';
+import AdminFilterChips from '../../components/admin/AdminFilterChips';
 
 const statusColors = {
   'Draft': 'bg-warm-500/15 text-warm-400',
@@ -35,7 +38,10 @@ export default function AdminBilling() {
   ];
   const shown = tab === 'outstanding' ? data.outstanding : tab === 'paid' ? data.recent_paid : data.invoices;
   const normalizedQuery = searchQuery.trim().toLowerCase();
-  const statusOptions = ['all', ...new Set(data.invoices.map((invoice) => invoice.payment_status || (invoice.paid ? 'Paid' : 'Draft')).filter(Boolean))];
+  const statusOptions = ['all', ...new Set(data.invoices.map((invoice) => invoice.payment_status || (invoice.paid ? 'Paid' : 'Draft')).filter(Boolean))].map((status) => ({
+    key: status,
+    label: status === 'all' ? 'All statuses' : status,
+  }));
   const filteredInvoices = shown.filter((invoice) => {
     const displayStatus = invoice.payment_status || (invoice.paid ? 'Paid' : 'Draft');
     const matchesStatus = statusFilter === 'all' || displayStatus === statusFilter;
@@ -55,24 +61,23 @@ export default function AdminBilling() {
 
     return haystack.includes(normalizedQuery);
   });
+  const statusCounts = {
+    all: shown.length,
+    ...Object.fromEntries(
+      statusOptions
+        .filter((option) => option.key !== 'all')
+        .map((option) => [option.key, shown.filter((invoice) => (invoice.payment_status || (invoice.paid ? 'Paid' : 'Draft')) === option.key).length])
+    ),
+  };
 
   return (
     <div data-testid="admin-billing-page" className="space-y-6">
       <h1 className="text-xl font-bold text-warm-50">Billing Overview</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
-          <div className="text-xs text-warm-400 mb-1">Total Revenue</div>
-          <div className="text-xl font-bold text-warm-50">${(data.summary.total_revenue || 0).toLocaleString()}</div>
-        </div>
-        <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
-          <div className="text-xs text-warm-400 mb-1">Total Paid</div>
-          <div className="text-xl font-bold text-green-400">${(data.summary.total_paid || 0).toLocaleString()}</div>
-        </div>
-        <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
-          <div className="text-xs text-warm-400 mb-1">Outstanding</div>
-          <div className="text-xl font-bold text-accent">${(data.summary.outstanding || 0).toLocaleString()}</div>
-        </div>
+        <AdminSummaryCard label="Total Revenue" value={`$${(data.summary.total_revenue || 0).toLocaleString()}`} />
+        <AdminSummaryCard label="Total Paid" value={`$${(data.summary.total_paid || 0).toLocaleString()}`} accent="text-green-400" />
+        <AdminSummaryCard label="Outstanding" value={`$${(data.summary.outstanding || 0).toLocaleString()}`} accent="text-accent" />
       </div>
 
       <div className="bg-dark-700 rounded-xl border border-dark-500/50 overflow-hidden">
@@ -87,63 +92,25 @@ export default function AdminBilling() {
           ))}
         </div>
         <div className="border-b border-dark-500/50 p-4 space-y-3">
-          <div className="relative w-full lg:max-w-sm">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-500" />
-            <input
-              data-testid="admin-billing-search"
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search invoice, customer email, type, or date"
-              className="w-full rounded-xl border border-dark-500/40 bg-dark-800 py-2.5 pl-9 pr-10 text-sm text-warm-100 placeholder-warm-500 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 hover:text-warm-200"
-                aria-label="Clear billing search"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap" data-testid="admin-billing-status-filters">
-            {statusOptions.map((status) => {
-              const count = status === 'all'
-                ? shown.length
-                : shown.filter((invoice) => (invoice.payment_status || (invoice.paid ? 'Paid' : 'Draft')) === status).length;
-              const active = statusFilter === status;
-
-              return (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setStatusFilter(status)}
-                  className={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                    active
-                      ? 'border-accent/30 bg-accent/15 text-accent'
-                      : 'border-dark-500/40 bg-dark-800 text-warm-400 hover:border-dark-400 hover:text-warm-200'
-                  }`}
-                >
-                  {status === 'all' ? 'All statuses' : status}
-                  <span className={`ml-1.5 ${active ? 'text-accent/70' : 'text-warm-600'}`}>{count}</span>
-                </button>
-              );
-            })}
-            {(searchQuery || statusFilter !== 'all') && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                }}
-                className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-warm-500 hover:text-warm-200"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          <AdminSearchInput
+            testId="admin-billing-search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search invoice, customer email, type, or date"
+            clearLabel="Clear billing search"
+          />
+          <AdminFilterChips
+            testId="admin-billing-status-filters"
+            options={statusOptions}
+            activeValue={statusFilter}
+            onChange={setStatusFilter}
+            counts={statusCounts}
+            showClear={Boolean(searchQuery || statusFilter !== 'all')}
+            onClear={() => {
+              setSearchQuery('');
+              setStatusFilter('all');
+            }}
+          />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full" data-testid="admin-invoices-table">

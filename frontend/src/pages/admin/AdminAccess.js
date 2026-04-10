@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { Shield, Plus, Trash2, X, Search } from 'lucide-react';
+import { Shield, Plus, Trash2, X } from 'lucide-react';
+import AdminSummaryCard from '../../components/admin/AdminSummaryCard';
+import AdminSearchInput from '../../components/admin/AdminSearchInput';
 
 export default function AdminAccess() {
   const [entries, setEntries] = useState([]);
@@ -55,6 +57,7 @@ export default function AdminAccess() {
       .toLowerCase()
       .includes(normalizedQuery);
   });
+  const protectedEntries = entries.filter((entry) => entry.protected).length;
 
   return (
     <div data-testid="admin-access-page" className="space-y-6">
@@ -72,28 +75,20 @@ export default function AdminAccess() {
         </button>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <AdminSummaryCard label="Admins" value={entries.length} />
+        <AdminSummaryCard label="Search Results" value={filteredEntries.length} accent="text-accent" />
+        <AdminSummaryCard label="Protected" value={protectedEntries} accent="text-green-400" />
+      </div>
+
       <div className="bg-dark-700 rounded-xl border border-dark-500/50 p-4">
-        <div className="relative w-full lg:max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-500" />
-          <input
-            data-testid="admin-access-search"
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search by email or name"
-            className="w-full rounded-xl border border-dark-500/40 bg-dark-800 py-2.5 pl-9 pr-10 text-sm text-warm-100 placeholder-warm-500 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 hover:text-warm-200"
-              aria-label="Clear access search"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
+        <AdminSearchInput
+          testId="admin-access-search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search by email or name"
+          clearLabel="Clear access search"
+        />
         <div className="mt-3 text-[11px] text-warm-500">
           {filteredEntries.length} of {entries.length} admin member{entries.length !== 1 ? 's' : ''} shown
         </div>
