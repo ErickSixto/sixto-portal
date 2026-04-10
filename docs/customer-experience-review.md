@@ -1,6 +1,6 @@
 # Customer Experience Review
 
-**Prepared:** April 10, 2026  
+**Prepared:** April 10, 2026
 **Scope:** Portal experience review from the customer's point of view, including usability opportunities and recent improvements
 
 ---

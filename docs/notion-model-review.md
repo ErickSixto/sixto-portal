@@ -1,6 +1,6 @@
 # Notion Model Review
 
-**Prepared:** April 10, 2026  
+**Prepared:** April 10, 2026
 **Scope:** Current schema review, entity enhancements, and metadata recommendations for the Sixto Portal
 
 ---
