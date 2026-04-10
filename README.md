@@ -52,6 +52,7 @@ A professional client portal that reads project data from Notion and presents it
 
 | File | Description |
 |------|-------------|
+| [`docs/implementation-review.md`](docs/implementation-review.md) | Senior-level audit of the current implementation docs, UX gaps, and prioritized improvement scope |
 | [`docs/emergent-prompt.md`](docs/emergent-prompt.md) | The prompt to paste into Emergent to build the portal |
 | [`docs/zapier-stripe-notion-guide.md`](docs/zapier-stripe-notion-guide.md) | Step-by-step Zapier configuration for Stripe → Notion sync |
 | [`docs/business-operating-system-plan.md`](docs/business-operating-system-plan.md) | Full strategic architecture document |

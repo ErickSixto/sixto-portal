@@ -236,6 +236,22 @@ def require_admin(user):
         raise HTTPException(status_code=403, detail="Admin access required")
 
 
+async def get_accessible_project(project_id: str, user, prop_map=None):
+    if user.get("role") == "admin":
+        pages = await notion_query("project")
+    else:
+        client_notion_id = user.get("client_notion_id")
+        if not client_notion_id:
+            raise HTTPException(status_code=403, detail="No client access configured")
+        pages = await notion_query("project", {"property": "Client", "relation": {"contains": client_notion_id}})
+
+    for page in pages:
+        if page.get("id") == project_id:
+            return parse_page(page, prop_map or PROJECT_PROPS)
+
+    raise HTTPException(status_code=404, detail="Project not found")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global mongo_client, db
@@ -343,35 +359,42 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
     user = await db.users.find_one({"email": email})
     is_admin = email == ADMIN_EMAIL or magic.get("role") == "admin"
     determined_role = "admin" if is_admin else "client"
+    resolved_client_notion_id = magic.get("client_notion_id") or (user.get("client_notion_id") if user else None)
     if not user:
         user_data = {
             "email": email, "role": determined_role,
             "name": magic.get("client_name", email.split("@")[0]),
-            "client_notion_id": magic.get("client_notion_id"),
+            "client_notion_id": resolved_client_notion_id,
             "created_at": datetime.now(timezone.utc),
         }
         result = await db.users.insert_one(user_data)
         user_data["_id"] = result.inserted_id
         user = user_data
     else:
-        # Update role if it changed
+        updates = {}
         if user.get("role") != determined_role:
-            await db.users.update_one({"_id": user["_id"]}, {"$set": {"role": determined_role}})
+            updates["role"] = determined_role
+        if resolved_client_notion_id and user.get("client_notion_id") != resolved_client_notion_id:
+            updates["client_notion_id"] = resolved_client_notion_id
+        if updates:
+            await db.users.update_one({"_id": user["_id"]}, {"$set": updates})
+            user.update(updates)
 
     project_ids = []
     if user.get("client_notion_id"):
         projects = await notion_query("project", {"property": "Client", "relation": {"contains": user["client_notion_id"]}})
         project_ids = [p.get("id") for p in projects]
         await db.users.update_one({"_id": user["_id"]}, {"$set": {"project_ids": project_ids}})
+        user["project_ids"] = project_ids
 
     user_id = str(user["_id"])
-    token = create_token(user_id, email, user.get("role", "client"), user.get("client_notion_id"))
+    token = create_token(user_id, email, determined_role, user.get("client_notion_id"))
 
     response.set_cookie(key="access_token", value=token, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
 
     return {
         "success": True,
-        "user": {"id": user_id, "email": email, "name": user.get("name", ""), "role": user.get("role", "client"), "project_ids": project_ids, "client_notion_id": user.get("client_notion_id")},
+        "user": {"id": user_id, "email": email, "name": user.get("name", ""), "role": determined_role, "project_ids": project_ids, "client_notion_id": user.get("client_notion_id")},
         "token": token,
     }
 
@@ -401,7 +424,8 @@ async def get_portal_projects(request: Request):
 
 @app.get("/api/portal/project/{project_id}/config")
 async def get_portal_config(project_id: str, request: Request):
-    await get_current_user(request)
+    user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
     configs = await notion_query("portal_config", {"property": "Project", "relation": {"contains": project_id}})
     if configs:
         return parse_page(configs[0], PORTAL_CONFIG_PROPS)
@@ -413,18 +437,7 @@ async def get_portal_config(project_id: str, request: Request):
 @app.get("/api/portal/project/{project_id}/dashboard")
 async def get_dashboard(project_id: str, request: Request):
     user = await get_current_user(request)
-    if user["role"] == "admin":
-        pages = await notion_query("project")
-    else:
-        pages = await notion_query("project", {"property": "Client", "relation": {"contains": user["client_notion_id"]}})
-
-    project = None
-    for p in pages:
-        if p.get("id") == project_id:
-            project = parse_page(p, PROJECT_PROPS)
-            break
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await get_accessible_project(project_id, user)
 
     tasks = await notion_query("task", {"property": "Project", "relation": {"contains": project_id}})
     task_list = [parse_page(t, TASK_PROPS) for t in tasks]
@@ -465,6 +478,7 @@ async def get_dashboard(project_id: str, request: Request):
 @app.get("/api/portal/project/{project_id}/tasks")
 async def get_tasks(project_id: str, request: Request):
     user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
     f = {"and": [{"property": "Project", "relation": {"contains": project_id}}, {"property": "Client Visible", "checkbox": {"equals": True}}]}
     if user["role"] == "admin":
         f = {"property": "Project", "relation": {"contains": project_id}}
@@ -474,6 +488,7 @@ async def get_tasks(project_id: str, request: Request):
 @app.get("/api/portal/project/{project_id}/deliverables")
 async def get_deliverables(project_id: str, request: Request):
     user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
     f = {"and": [{"property": "Project", "relation": {"contains": project_id}}, {"property": "Client Visible", "checkbox": {"equals": True}}]}
     if user["role"] == "admin":
         f = {"property": "Project", "relation": {"contains": project_id}}
@@ -482,7 +497,10 @@ async def get_deliverables(project_id: str, request: Request):
 
 @app.get("/api/portal/project/{project_id}/billing")
 async def get_billing(project_id: str, request: Request):
-    await get_current_user(request)
+    user = await get_current_user(request)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Billing is only available in the admin dashboard")
+    await get_accessible_project(project_id, user)
     pages = await notion_query("invoice", {"property": "Project", "relation": {"contains": project_id}})
     invoices = [parse_page(p, INVOICE_PROPS) for p in pages]
     total_billed = sum(i.get("amount") or 0 for i in invoices)
@@ -493,6 +511,7 @@ async def get_billing(project_id: str, request: Request):
 @app.get("/api/portal/project/{project_id}/updates")
 async def get_updates(project_id: str, request: Request):
     user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
     f = {"and": [{"property": "Project", "relation": {"contains": project_id}}, {"property": "Client Visible", "checkbox": {"equals": True}}]}
     if user["role"] == "admin":
         f = {"property": "Project", "relation": {"contains": project_id}}
@@ -502,6 +521,7 @@ async def get_updates(project_id: str, request: Request):
 @app.get("/api/portal/project/{project_id}/meetings")
 async def get_meetings(project_id: str, request: Request):
     user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
     f = {"and": [{"property": "Project", "relation": {"contains": project_id}}, {"property": "Client Visible", "checkbox": {"equals": True}}]}
     if user["role"] == "admin":
         f = {"property": "Project", "relation": {"contains": project_id}}
@@ -510,7 +530,8 @@ async def get_meetings(project_id: str, request: Request):
 
 @app.get("/api/portal/project/{project_id}/documents")
 async def get_documents(project_id: str, request: Request):
-    await get_current_user(request)
+    user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
     deliverables = await notion_query("deliverables", {"and": [
         {"property": "Project", "relation": {"contains": project_id}},
         {"property": "Client Visible", "checkbox": {"equals": True}},
@@ -540,6 +561,7 @@ async def get_documents(project_id: str, request: Request):
 @app.post("/api/portal/project/{project_id}/requests")
 async def submit_request(project_id: str, req: SubmitRequestModel, request: Request):
     user = await get_current_user(request)
+    await get_accessible_project(project_id, user)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     properties = {
         "Name": {"title": [{"text": {"content": req.name}}]},

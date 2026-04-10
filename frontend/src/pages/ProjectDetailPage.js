@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api';
 import {
@@ -30,14 +30,66 @@ const projectStatusStyles = {
   'Lost': 'bg-red-500/15 text-red-400',
 };
 
+function formatProjectType(projectType) {
+  if (Array.isArray(projectType)) return projectType.join(', ');
+  return projectType || '';
+}
+
+function isTabVisible(tabKey, config) {
+  if (!config) return true;
+
+  const toggleMap = {
+    tasks: config.show_tasks,
+    deliverables: config.show_deliverables,
+    documents: config.show_documents,
+    meetings: config.show_meetings,
+    request: config.show_feedback,
+  };
+
+  return toggleMap[tabKey] !== false;
+}
+
 /* ─── OVERVIEW TAB ─── */
-function OverviewTab({ data }) {
+function OverviewTab({ data, config }) {
   if (!data) return <EmptyState text="No overview data available." />;
   const { project, metrics, recent_updates, upcoming_meetings } = data;
   const progress = metrics.tasks_total > 0 ? Math.round((metrics.tasks_completed / metrics.tasks_total) * 100) : 0;
+  const projectType = formatProjectType(project?.project_type);
 
   return (
     <div className="space-y-5">
+      {(config?.portal_intro || config?.cta_url || config?.support_contact || config?.contact_email) && (
+        <div className="rounded-xl border border-accent/20 bg-accent/10 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              {config?.portal_title && (
+                <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-accent/80">
+                  {config.portal_title}
+                </div>
+              )}
+              {config?.portal_intro && (
+                <p className="max-w-2xl text-sm leading-relaxed text-warm-200">{config.portal_intro}</p>
+              )}
+              <div className="flex flex-wrap items-center gap-3 text-[11px] text-warm-400">
+                {projectType && <span>{projectType}</span>}
+                {config?.support_contact && <span>{config.support_contact}</span>}
+                {!config?.support_contact && config?.contact_email && <span>{config.contact_email}</span>}
+              </div>
+            </div>
+            {config?.cta_url && config?.cta_label && (
+              <a
+                href={config.cta_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-dark-950 transition-colors hover:bg-accent-light"
+              >
+                {config.cta_label}
+                <ExternalLink size={14} />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <MetricCard label="Tasks" value={`${metrics.tasks_completed}/${metrics.tasks_total}`} sub={`${progress}% complete`} />
         <MetricCard label="Deliverables" value={`${metrics.deliverables_delivered}/${metrics.deliverables_total}`} sub="delivered" />
@@ -614,15 +666,26 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dashData, setDashData] = useState(null);
   const [project, setProject] = useState(null);
+  const [portalConfig, setPortalConfig] = useState(null);
+  const [projectOptions, setProjectOptions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    api(`/api/portal/project/${projectId}/dashboard`)
-      .then(d => { setDashData(d); setProject(d.project); })
+    Promise.all([
+      api(`/api/portal/project/${projectId}/dashboard`),
+      api(`/api/portal/project/${projectId}/config`).catch(() => null),
+      api('/api/portal/projects').catch(() => []),
+    ])
+      .then(([dashboard, config, projects]) => {
+        setDashData(dashboard);
+        setProject(dashboard.project);
+        setPortalConfig(config);
+        setProjectOptions(projects);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [projectId]);
@@ -632,6 +695,23 @@ export default function ProjectDetailPage() {
     navigate('/login');
   };
 
+  const visibleTabs = TABS.filter((tab) => tab.key === 'overview' || isTabVisible(tab.key, portalConfig));
+  const requestedTab = searchParams.get('tab') || 'overview';
+  const activeTab = visibleTabs.some((tab) => tab.key === requestedTab)
+    ? requestedTab
+    : (visibleTabs[0]?.key || 'overview');
+  const projectType = formatProjectType(project?.project_type);
+
+  useEffect(() => {
+    if (requestedTab !== activeTab) {
+      if (activeTab === 'overview') {
+        setSearchParams({}, { replace: true });
+      } else {
+        setSearchParams({ tab: activeTab }, { replace: true });
+      }
+    }
+  }, [activeTab, requestedTab, setSearchParams]);
+
   if (loading) return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -639,7 +719,7 @@ export default function ProjectDetailPage() {
   );
 
   const tabContent = {
-    overview: <OverviewTab data={dashData} />,
+    overview: <OverviewTab data={dashData} config={portalConfig} />,
     tasks: <TasksTab projectId={projectId} />,
     deliverables: <DeliverablesTab projectId={projectId} />,
     documents: <DocumentsTab projectId={projectId} />,
@@ -658,18 +738,34 @@ export default function ProjectDetailPage() {
               <ArrowLeft size={18} />
             </button>
             <div>
-              <div className="text-warm-50 text-sm font-semibold">{project?.name || 'Project'}</div>
-              <div className="flex items-center gap-2">
+              <div className="text-warm-50 text-sm font-semibold">
+                {portalConfig?.portal_title || project?.name || 'Project'}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
                 {project?.status && (
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${projectStatusStyles[project.status] || 'bg-warm-500/15 text-warm-400'}`}>
                     {project.status}
                   </span>
                 )}
-                {project?.project_type && <span className="text-[10px] text-warm-500">{project.project_type}</span>}
+                {projectType && <span className="text-[10px] text-warm-500">{projectType}</span>}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {projectOptions.length > 1 && (
+              <select
+                data-testid="project-switcher"
+                value={projectId}
+                onChange={(event) => navigate(`/project/${event.target.value}${activeTab === 'overview' ? '' : `?tab=${activeTab}`}`)}
+                className="hidden rounded-lg border border-dark-500/40 bg-dark-800 px-3 py-2 text-xs text-warm-200 focus:border-accent/40 focus:outline-none lg:block"
+              >
+                {projectOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <div className="text-right hidden sm:block">
               <div className="text-warm-200 text-xs font-medium">{user?.name || 'User'}</div>
               <div className="text-warm-500 text-[10px]">{user?.email}</div>
@@ -684,14 +780,20 @@ export default function ProjectDetailPage() {
       {/* Tab Bar */}
       <div className="border-b border-dark-500/50 bg-dark-950/50 backdrop-blur-sm sticky top-[57px] z-20 overflow-x-auto">
         <div className="max-w-5xl mx-auto px-5 flex gap-1">
-          {TABS.map(tab => {
+          {visibleTabs.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 data-testid={`tab-${tab.key}`}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  if (tab.key === 'overview') {
+                    setSearchParams({}, { replace: true });
+                  } else {
+                    setSearchParams({ tab: tab.key }, { replace: true });
+                  }
+                }}
                 className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                   active ? 'border-accent text-accent' : 'border-transparent text-warm-500 hover:text-warm-200'
                 }`}
