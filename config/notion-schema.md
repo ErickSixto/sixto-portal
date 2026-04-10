@@ -22,6 +22,7 @@ Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
 | Requests | `936d54e8-1dd2-4c3c-b57f-e5f5239924e3` |
 | Portal Users | `29f4d51e-acd4-44f7-8ec5-0586d20f3e55` |
 | Portal Documents | `6422e295-ecc9-4a96-8c31-5a312e3586bd` |
+| Milestones | `e31b0502-81c3-4a28-8f62-85129d0e5a96` |
 
 ## Property Reference
 
@@ -41,6 +42,7 @@ Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
 | Requests | Relation → Requests | |
 | Portal Users | Relation ← Portal Users | Reverse relation from portal identities |
 | Portal Documents | Relation ← Portal Documents | Reverse relation from client-facing documents |
+| Milestones | Relation ← Milestones | Reverse relation from project roadmap milestones |
 | Primary Portal Contact | Relation → Portal Users | Preferred portal contact |
 | Billing Contact | Email | Billing destination or finance contact |
 | Timezone | Text | Client operating timezone |
@@ -67,6 +69,7 @@ Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
 | Requests | Relation → Requests | |
 | Portal Members | Relation ← Portal Users | Reverse relation from accessible portal users |
 | Portal Documents | Relation ← Portal Documents | Reverse relation from client-facing documents |
+| Milestones | Relation ← Milestones | Reverse relation from the milestone roadmap |
 | Project Health | Select | On Track, At Risk, Blocked, Completed |
 | Client-Facing Summary | Text | Overview copy for the portal |
 | Primary Owner | People | Internal owner accountable for the project |
@@ -137,6 +140,7 @@ Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
 | Description | Text | |
 | Files | Files | |
 | Client Visible | Checkbox | Portal display filter |
+| Portal Documents | Relation ← Portal Documents | Reverse relation from canonical portal docs |
 | Category | Select | Guide, Report, Asset, Handoff, Reference |
 | Version | Text | Version label for handoffs |
 | Approved By | Text | Approver name or team |
@@ -220,6 +224,7 @@ Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
 | Project | Relation → Project | Owning project |
 | Client | Relation → Client | Owning client |
 | Category | Select | Guide, Report, Proposal, Contract, Asset, Reference |
+| Client-Facing Title | Text | Preferred display title in the portal UI |
 | Summary | Text | Portal card summary |
 | Files | Files | Attached deliverables or docs |
 | External URL | URL | External destination if hosted elsewhere |
@@ -227,3 +232,30 @@ Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
 | Sort Order | Number | Stable ordering in the documents view |
 | Status | Select | Draft, Published, Archived |
 | Published At | Date | Publish timestamp for client visibility |
+| Source System | Select | Native, Deliverable, Proposal, Contract, External |
+| External ID | Text | Stable source reference for sync jobs |
+| Owner | People | Internal owner for document quality and routing |
+| Source Last Synced At | Date | Last successful upstream sync |
+| Last Reviewed At | Date | Most recent manual QA/review pass |
+| Needs Review | Checkbox | Flags docs that need editorial review |
+| Deliverable Source | Relation → Deliverables | Canonical source deliverable when synced |
+| Proposal Source | Relation → Proposal | Canonical source proposal when synced |
+| Contract Source | Relation → Contract | Canonical source contract when synced |
+
+### Milestones
+| Property | Type | Notes |
+|----------|------|-------|
+| Name | Title | Milestone title shown in roadmap views |
+| Project | Relation → Project | Owning project |
+| Client | Relation → Client | Owning client |
+| Status | Select | Upcoming, At Risk, Completed |
+| Milestone Type | Select | Kickoff, Approval, Delivery, Launch, Billing, Other |
+| Target Date | Date | Planned milestone date |
+| Completed Date | Date | Actual completion date |
+| Summary | Text | Client-facing milestone context |
+| Owner | People | Internal owner accountable for follow-through |
+| Client Visible | Checkbox | Portal display filter |
+| Sort Order | Number | Stable ordering across roadmap views |
+| Customer Action Needed | Checkbox | Highlights milestones blocked on the client |
+| CTA Label | Text | Optional customer-facing action label |
+| CTA URL | URL | Optional customer-facing action destination |

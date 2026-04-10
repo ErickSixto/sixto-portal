@@ -46,6 +46,7 @@ A professional client portal that reads project data from Notion and presents it
 | Requests | Client-submitted change requests and feedback |
 | Portal Users | Portal identities, access scope, and default project routing |
 | Portal Documents | Canonical client-facing documents, guides, and handoff assets |
+| Milestones | Client-facing roadmap moments and progress checkpoints |
 | Proposal | Project proposals |
 | Contract | Signed contracts |
 | Leads | Inbound leads pipeline |

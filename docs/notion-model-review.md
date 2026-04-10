@@ -372,6 +372,7 @@ The following schema changes have now been applied live in Notion to strengthen 
 
 - `Portal Users`
 - `Portal Documents`
+- `Milestones`
 
 ### New Relationships Added
 
@@ -383,6 +384,13 @@ The following schema changes have now been applied live in Notion to strengthen 
 - `Portal Documents.Project` → `Project`
 - reverse relation on `Client`: `Portal Documents`
 - reverse relation on `Project`: `Portal Documents`
+- `Milestones.Client` → `Client`
+- `Milestones.Project` → `Project`
+- reverse relation on `Client`: `Milestones`
+- reverse relation on `Project`: `Milestones`
+- `Portal Documents.Deliverable Source` → `Deliverables`
+- `Portal Documents.Proposal Source` → `Proposal`
+- `Portal Documents.Contract Source` → `Contract`
 
 ### Fields Added to Existing Databases
 
@@ -451,13 +459,71 @@ Invoice:
 - `Balance Due`
 - `Source Last Synced At`
 
+Portal Documents:
+
+- `Client-Facing Title`
+- `Source System`
+- `External ID`
+- `Owner`
+- `Source Last Synced At`
+- `Last Reviewed At`
+- `Needs Review`
+- `Deliverable Source`
+- `Proposal Source`
+- `Contract Source`
+
+Milestones:
+
+- `Status`
+- `Milestone Type`
+- `Target Date`
+- `Completed Date`
+- `Summary`
+- `Owner`
+- `Client Visible`
+- `Sort Order`
+- `Customer Action Needed`
+- `CTA Label`
+- `CTA URL`
+
 ### What This Unlocks
 
 - multiple portal contacts per client without relying on a single `Client.Email`
 - a real documents surface for guides, handoff materials, and reference assets
 - better customer-facing project storytelling via `Project Health`, summaries, pinned updates, and clearer request states
 - cleaner portal UX with explicit sort order, publish timing, and support metadata
+- a real roadmap layer that can drive progress timelines without overloading tasks or updates
+
+### Navigation Improvements Applied
+
+- `Portal Documents`: `Published Library`, `Review Queue`, `By Category`
+- `Portal Users`: `Active Access`, `Invited`
+- `Milestones`: `Upcoming`, `Milestone Calendar`, `By Status`
+
+These views make the Notion workspace much easier to operate by separating publishing work, access management, and roadmap planning into clear workflows instead of one overloaded default table.
+
+### Portal Document Read/Write Contract
+
+Use `Portal Documents` as the canonical source for the portal documents tab.
+
+Fetch pattern:
+
+- query `Portal Documents`, not `Deliverables`, `Proposal`, or `Contract` directly
+- filter for `Status = Published` and `Client Visible = true`
+- scope by `Project` first, then by `Client` when project context is broader
+- display `Client-Facing Title` when present, otherwise fall back to `Name`
+- use `External URL` when present, otherwise use `Files`
+- sort by `Sort Order`, then `Published At`
+- use `Source System`, `Source Last Synced At`, and `Last Reviewed At` for operational freshness and QA
+
+Update pattern:
+
+- native portal documents should be authored directly in `Portal Documents` with `Source System = Native`
+- synced documents should be matched on `Source System` plus `External ID` so updates stay idempotent
+- when a document originates from an existing record, populate `Deliverable Source`, `Proposal Source`, or `Contract Source`
+- set `Needs Review = true` when upstream content changes but client-facing copy has not been checked yet
+- only move a record to `Status = Published` when its title, summary, visibility, and delivery target are ready for clients
 
 ### Recommended Next Model Step
 
-The next highest-value addition is still a dedicated `Milestone` entity. The access model is now much healthier, and milestones would make the customer experience more legible by giving the portal a true progress narrative instead of deriving it from tasks, meetings, and updates alone.
+The next highest-value improvement after this is to make the application read portal access from `Portal Users` and read the documents tab directly from `Portal Documents`. That will let the app fully benefit from the cleaner schema that now exists in Notion.
