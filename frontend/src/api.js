@@ -1,3 +1,5 @@
+import { isMockApiEnabled, mockApi } from './mockApi';
+
 const API = process.env.REACT_APP_BACKEND_URL;
 
 function getToken() {
@@ -13,6 +15,10 @@ function clearToken() {
 }
 
 async function api(path, options = {}) {
+  if (isMockApiEnabled) {
+    return mockApi(path, options);
+  }
+
   const token = getToken();
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) headers['Authorization'] = `Bearer ${token}`;

@@ -37,6 +37,21 @@ function formatProjectType(projectType) {
   return projectType || '';
 }
 
+function formatDisplayDate(value) {
+  if (!value) return 'TBD';
+  const normalizedValue = typeof value === 'string' ? value : value?.start;
+  if (!normalizedValue) return 'TBD';
+  if (normalizedValue.includes('T')) {
+    return new Date(normalizedValue).toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+  return normalizedValue;
+}
+
 function isTabVisible(tabKey, config) {
   if (!config) return true;
 
@@ -52,12 +67,50 @@ function isTabVisible(tabKey, config) {
   return toggleMap[tabKey] !== false;
 }
 
+function OverviewActionCard({ eyebrow, title, detail, actionLabel, onAction, tone = 'default' }) {
+  const toneStyles = {
+    default: 'border-dark-500/40 bg-dark-700',
+    positive: 'border-green-500/20 bg-green-500/10',
+    caution: 'border-red-500/20 bg-red-500/10',
+    accent: 'border-accent/20 bg-accent/10',
+  };
+
+  return (
+    <div className={`rounded-xl border p-5 ${toneStyles[tone] || toneStyles.default}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-warm-500">{eyebrow}</div>
+      <div className="mt-2 text-sm font-semibold text-warm-100">{title}</div>
+      <p className="mt-1 text-xs leading-relaxed text-warm-400">{detail}</p>
+      {onAction && actionLabel && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-4 inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-accent transition-colors hover:bg-dark-600"
+        >
+          {actionLabel}
+          <ChevronRight size={12} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* ─── OVERVIEW TAB ─── */
-function OverviewTab({ data, config }) {
+function OverviewTab({ data, config, onOpenTab }) {
   if (!data) return <EmptyState text="No overview data available." />;
-  const { project, metrics, recent_updates, upcoming_meetings } = data;
+  const {
+    project,
+    metrics,
+    recent_updates,
+    upcoming_meetings,
+    attention = {},
+    highlights = {},
+  } = data;
   const progress = metrics.tasks_total > 0 ? Math.round((metrics.tasks_completed / metrics.tasks_total) * 100) : 0;
   const projectType = formatProjectType(project?.project_type);
+  const needsAttention = (attention.overdue_tasks || 0) + (attention.blocked_tasks || 0);
+  const nextDueTask = highlights.next_due_task;
+  const nextMeeting = highlights.next_meeting;
+  const latestUpdate = highlights.latest_update;
 
   return (
     <div className="space-y-5">
@@ -93,9 +146,15 @@ function OverviewTab({ data, config }) {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MetricCard label="Tasks" value={`${metrics.tasks_completed}/${metrics.tasks_total}`} sub={`${progress}% complete`} />
         <MetricCard label="Deliverables" value={`${metrics.deliverables_delivered}/${metrics.deliverables_total}`} sub="delivered" />
+        <MetricCard label="Open Tasks" value={attention.open_tasks || 0} sub="still in motion" />
+        <MetricCard
+          label="Needs Attention"
+          value={needsAttention}
+          sub={`${attention.overdue_tasks || 0} overdue · ${attention.blocked_tasks || 0} blocked`}
+        />
       </div>
       <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
         <div className="flex items-center justify-between mb-3">
@@ -105,6 +164,56 @@ function OverviewTab({ data, config }) {
         <div className="w-full bg-dark-500 rounded-full h-2">
           <div className="bg-accent h-2 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} data-testid="progress-bar" />
         </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <OverviewActionCard
+          eyebrow={needsAttention > 0 ? 'Needs Attention' : 'On Track'}
+          title={needsAttention > 0 ? `${needsAttention} item${needsAttention !== 1 ? 's' : ''} need follow-up` : 'No urgent blockers right now'}
+          detail={
+            needsAttention > 0
+              ? `${attention.overdue_tasks || 0} overdue task${attention.overdue_tasks === 1 ? '' : 's'} and ${attention.blocked_tasks || 0} blocked task${attention.blocked_tasks === 1 ? '' : 's'} are affecting delivery.`
+              : `You currently have ${attention.open_tasks || 0} open task${attention.open_tasks === 1 ? '' : 's'} in motion.`
+          }
+          actionLabel="Review tasks"
+          onAction={() => onOpenTab?.('tasks')}
+          tone={needsAttention > 0 ? 'caution' : 'positive'}
+        />
+        <OverviewActionCard
+          eyebrow="Next Up"
+          title={nextDueTask?.name || 'No upcoming due task yet'}
+          detail={
+            nextDueTask
+              ? `${formatDisplayDate(nextDueTask.due_date)} · ${nextDueTask.priority || 'No priority'} priority`
+              : 'As new milestones and tasks are scheduled, the next due item will appear here.'
+          }
+          actionLabel="Open tasks"
+          onAction={() => onOpenTab?.('tasks')}
+          tone="default"
+        />
+        <OverviewActionCard
+          eyebrow="Meetings"
+          title={nextMeeting?.name || 'No upcoming meeting scheduled'}
+          detail={
+            nextMeeting
+              ? `${formatDisplayDate(nextMeeting.date_time)}${nextMeeting.participant ? ` · ${nextMeeting.participant}` : ''}`
+              : 'Once the next sync is scheduled, it will show up here with the join link.'
+          }
+          actionLabel={nextMeeting ? 'Open meetings' : 'Review project'}
+          onAction={() => onOpenTab?.(nextMeeting ? 'meetings' : 'overview')}
+          tone="default"
+        />
+        <OverviewActionCard
+          eyebrow={latestUpdate ? 'Latest Update' : 'Support'}
+          title={latestUpdate?.name || 'Need to ask for something?'}
+          detail={
+            latestUpdate
+              ? `Latest update on ${formatDisplayDate(latestUpdate.date)}. Open the updates feed to catch up before responding.`
+              : 'Use the request form for questions, change requests, support needs, or feedback.'
+          }
+          actionLabel={config?.show_feedback === false ? 'Open updates' : latestUpdate ? 'View updates' : 'Submit request'}
+          onAction={() => onOpenTab?.(config?.show_feedback === false ? 'updates' : latestUpdate ? 'updates' : 'request')}
+          tone="accent"
+        />
       </div>
       {upcoming_meetings && upcoming_meetings.length > 0 && (
         <div className="bg-dark-700 rounded-xl border border-dark-500/50 p-5">
@@ -831,6 +940,12 @@ function UpdatesTab({ projectId }) {
 /* ─── REQUEST TAB ─── */
 const reqTypes = ['Change Request', 'Question', 'Feedback', 'Support'];
 const reqPriorities = ['Low', 'Medium', 'High'];
+const requestTypeGuidance = {
+  'Change Request': 'Use this for new scope, enhancements, or adjustments to what is already being built.',
+  Question: 'Use this when you need clarification, context, or a quick answer about the project.',
+  Feedback: 'Use this for opinions, review notes, or direction on something you have already seen.',
+  Support: 'Use this for blockers, urgent fixes, or issues that need operational help.',
+};
 
 function RequestTab({ projectId }) {
   const [form, setForm] = useState({ name: '', type: 'Question', priority: 'Medium', description: '' });
@@ -861,6 +976,12 @@ function RequestTab({ projectId }) {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl bg-dark-700 rounded-xl border border-dark-500/50 p-6 space-y-4" data-testid="request-form">
+      <div className="rounded-xl border border-dark-500/40 bg-dark-800 p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-warm-500">How This Works</div>
+        <p className="mt-2 text-xs leading-relaxed text-warm-300">
+          Share one request at a time so we can triage it clearly. Choose <span className="text-warm-100">High</span> priority only for blockers or urgent support.
+        </p>
+      </div>
       <div>
         <label className="block text-xs font-medium text-warm-200 mb-1">Subject</label>
         <input data-testid="request-name" type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="Brief summary"
@@ -873,6 +994,7 @@ function RequestTab({ projectId }) {
             className="w-full px-3.5 py-2.5 bg-dark-800 border border-dark-400 rounded-xl text-sm text-warm-50 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30">
             {reqTypes.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
+          <p className="mt-2 text-[11px] leading-relaxed text-warm-500">{requestTypeGuidance[form.type]}</p>
         </div>
         <div>
           <label className="block text-xs font-medium text-warm-200 mb-1">Priority</label>
@@ -966,6 +1088,19 @@ export default function ProjectDetailPage() {
     }
   }, [activeTab, requestedTab, setSearchParams]);
 
+  const openTab = (tabKey) => {
+    if (tabKey === 'overview') {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    setSearchParams({ tab: tabKey }, { replace: true });
+  };
+
+  const navigateToProject = (nextProjectId) => {
+    navigate(`/project/${nextProjectId}${activeTab === 'overview' ? '' : `?tab=${activeTab}`}`);
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -973,7 +1108,7 @@ export default function ProjectDetailPage() {
   );
 
   const tabContent = {
-    overview: <OverviewTab data={dashData} config={portalConfig} />,
+    overview: <OverviewTab data={dashData} config={portalConfig} onOpenTab={openTab} />,
     tasks: <TasksTab projectId={projectId} />,
     deliverables: <DeliverablesTab projectId={projectId} />,
     billing: <BillingTab projectId={projectId} />,
@@ -1011,8 +1146,8 @@ export default function ProjectDetailPage() {
               <select
                 data-testid="project-switcher"
                 value={projectId}
-                onChange={(event) => navigate(`/project/${event.target.value}${activeTab === 'overview' ? '' : `?tab=${activeTab}`}`)}
-                className="hidden rounded-lg border border-dark-500/40 bg-dark-800 px-3 py-2 text-xs text-warm-200 focus:border-accent/40 focus:outline-none lg:block"
+                onChange={(event) => navigateToProject(event.target.value)}
+                className="hidden rounded-lg border border-dark-500/40 bg-dark-800 px-3 py-2 text-xs text-warm-200 focus:border-accent/40 focus:outline-none md:block"
               >
                 {projectOptions.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -1032,6 +1167,28 @@ export default function ProjectDetailPage() {
         </div>
       </header>
 
+      {projectOptions.length > 1 && (
+        <div className="border-b border-dark-500/40 bg-dark-950/40 md:hidden">
+          <div className="max-w-5xl mx-auto px-5 py-3">
+            <label htmlFor="mobile-project-switcher" className="block text-[10px] font-semibold uppercase tracking-[0.24em] text-warm-500">
+              Switch Project
+            </label>
+            <select
+              id="mobile-project-switcher"
+              value={projectId}
+              onChange={(event) => navigateToProject(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-dark-500/40 bg-dark-800 px-3 py-2.5 text-sm text-warm-100 focus:border-accent/40 focus:outline-none"
+            >
+              {projectOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Tab Bar */}
       <div className="border-b border-dark-500/50 bg-dark-950/50 backdrop-blur-sm sticky top-[57px] z-20 overflow-x-auto">
         <div className="max-w-5xl mx-auto px-5 flex gap-1">
@@ -1042,13 +1199,7 @@ export default function ProjectDetailPage() {
               <button
                 key={tab.key}
                 data-testid={`tab-${tab.key}`}
-                onClick={() => {
-                  if (tab.key === 'overview') {
-                    setSearchParams({}, { replace: true });
-                  } else {
-                    setSearchParams({ tab: tab.key }, { replace: true });
-                  }
-                }}
+                onClick={() => openTab(tab.key)}
                 className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                   active ? 'border-accent text-accent' : 'border-transparent text-warm-500 hover:text-warm-200'
                 }`}

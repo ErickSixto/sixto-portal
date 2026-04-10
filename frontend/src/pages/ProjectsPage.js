@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { Folder, ArrowRight, Calendar, LogOut, Search, X } from 'lucide-react';
+import { Folder, ArrowRight, Calendar, LogOut, Search, X, CheckCircle2, MessageSquare } from 'lucide-react';
 
 const statusStyles = {
   'Not started': 'bg-warm-500/15 text-warm-400 border-warm-500/20',
@@ -34,6 +34,31 @@ function formatProjectDate(projectDate) {
   if (!projectDate?.start) return '';
   if (projectDate.end) return `${projectDate.start} - ${projectDate.end}`;
   return projectDate.start;
+}
+
+function ProjectsSummaryCard({ icon: Icon, label, value, helper, onClick }) {
+  const content = (
+    <div className="rounded-2xl border border-dark-500/40 bg-dark-800 p-5 text-left">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-warm-500">{label}</div>
+          <div className="mt-2 text-2xl font-bold text-warm-50">{value}</div>
+        </div>
+        <div className="rounded-xl bg-accent/10 p-2.5 text-accent">
+          <Icon size={16} />
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-warm-400">{helper}</p>
+    </div>
+  );
+
+  if (!onClick) return content;
+
+  return (
+    <button type="button" onClick={onClick} className="w-full transition-transform hover:-translate-y-0.5">
+      {content}
+    </button>
+  );
 }
 
 function ProjectCard({ project, onClick }) {
@@ -119,6 +144,9 @@ export default function ProjectsPage() {
   const active = visibleProjects.filter((project) => !isCompletedProject(project));
   const past = visibleProjects.filter(isCompletedProject);
   const hasActiveFilters = viewFilter !== 'all' || normalizedQuery.length > 0;
+  const totalActiveProjects = projects.filter((project) => !isCompletedProject(project)).length;
+  const totalCompletedProjects = projects.filter(isCompletedProject).length;
+  const defaultProject = projects.find((project) => !isCompletedProject(project)) || projects[0];
 
   return (
     <div className="min-h-screen bg-dark-900" data-testid="projects-page">
@@ -156,6 +184,30 @@ export default function ProjectsPage() {
               {projects.length} project{projects.length !== 1 ? 's' : ''}
             </p>
           </div>
+
+          {!loading && projects.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <ProjectsSummaryCard
+                icon={Folder}
+                label="Active"
+                value={totalActiveProjects}
+                helper="Current delivery work that still needs your attention or review."
+              />
+              <ProjectsSummaryCard
+                icon={CheckCircle2}
+                label="Completed"
+                value={totalCompletedProjects}
+                helper="Finished or archived work remains available here for reference."
+              />
+              <ProjectsSummaryCard
+                icon={MessageSquare}
+                label="Need Help?"
+                value="Support"
+                helper="Open a project to review updates, check deliverables, or send a request."
+                onClick={() => defaultProject && navigate(`/project/${defaultProject.id}`)}
+              />
+            </div>
+          )}
 
           {!loading && projects.length > 0 && (
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

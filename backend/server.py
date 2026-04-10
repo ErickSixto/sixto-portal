@@ -252,6 +252,16 @@ async def get_accessible_project(project_id: str, user, prop_map=None):
     raise HTTPException(status_code=404, detail="Project not found")
 
 
+def get_date_start(value):
+    if isinstance(value, dict):
+        return value.get("start")
+    return value
+
+
+def is_open_task(task):
+    return task.get("status") not in ("Done", "Won't Do")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global mongo_client, db
@@ -439,12 +449,35 @@ async def get_dashboard(project_id: str, request: Request):
     user = await get_current_user(request)
     project = await get_accessible_project(project_id, user)
 
-    tasks = await notion_query("task", {"property": "Project", "relation": {"contains": project_id}})
+    tasks_filter = {"property": "Project", "relation": {"contains": project_id}}
+    deliverables_filter = {"property": "Project", "relation": {"contains": project_id}}
+    if user["role"] != "admin":
+        tasks_filter = {"and": [
+            {"property": "Project", "relation": {"contains": project_id}},
+            {"property": "Client Visible", "checkbox": {"equals": True}},
+        ]}
+        deliverables_filter = {"and": [
+            {"property": "Project", "relation": {"contains": project_id}},
+            {"property": "Client Visible", "checkbox": {"equals": True}},
+        ]}
+
+    tasks = await notion_query("task", tasks_filter, sorts=[{"property": "Due Date", "direction": "ascending"}])
     task_list = [parse_page(t, TASK_PROPS) for t in tasks]
     total_tasks = len(task_list)
     completed_tasks = len([t for t in task_list if t.get("status") == "Done"])
+    open_tasks = [t for t in task_list if is_open_task(t)]
+    blocked_tasks = len([t for t in open_tasks if t.get("status") == "Blocked"])
+    today_iso = datetime.now(timezone.utc).date().isoformat()
+    overdue_tasks = len([
+        t for t in open_tasks
+        if get_date_start(t.get("due_date")) and get_date_start(t.get("due_date"))[:10] < today_iso
+    ])
+    next_due_task = next((
+        t for t in open_tasks
+        if get_date_start(t.get("due_date")) and get_date_start(t.get("due_date"))[:10] >= today_iso
+    ), None)
 
-    deliverables = await notion_query("deliverables", {"property": "Project", "relation": {"contains": project_id}})
+    deliverables = await notion_query("deliverables", deliverables_filter)
     del_list = [parse_page(d, DELIVERABLE_PROPS) for d in deliverables]
     total_del = len(del_list)
     delivered = len([d for d in del_list if d.get("status") in ("Delivered", "Accepted")])
@@ -467,11 +500,18 @@ async def get_dashboard(project_id: str, request: Request):
         if dt and isinstance(dt, dict) and dt.get("start") and dt["start"] >= now_iso and parsed_m.get("status") not in ("Cancelled", "Completed"):
             upcoming_meetings.append(parsed_m)
     upcoming_meetings = upcoming_meetings[:3]
+    latest_update = recent[0] if recent else None
 
     return {
         "project": project, "recent_updates": recent, "upcoming_meetings": upcoming_meetings,
         "metrics": {"tasks_completed": completed_tasks, "tasks_total": total_tasks,
                      "deliverables_delivered": delivered, "deliverables_total": total_del},
+        "attention": {"open_tasks": len(open_tasks), "blocked_tasks": blocked_tasks, "overdue_tasks": overdue_tasks},
+        "highlights": {
+            "next_due_task": next_due_task,
+            "next_meeting": upcoming_meetings[0] if upcoming_meetings else None,
+            "latest_update": latest_update,
+        },
     }
 
 
