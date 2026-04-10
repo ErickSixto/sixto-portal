@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { Shield, Plus, Trash2, X } from 'lucide-react';
+import { Shield, Plus, Trash2, X, Search } from 'lucide-react';
 
 export default function AdminAccess() {
   const [entries, setEntries] = useState([]);
@@ -8,6 +8,7 @@ export default function AdminAccess() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ email: '', name: '', role: 'admin' });
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchAccess = () => {
     setLoading(true);
@@ -45,6 +46,16 @@ export default function AdminAccess() {
     </div>
   );
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredEntries = entries.filter((entry) => {
+    if (!normalizedQuery) return true;
+    return [entry.email, entry.name, entry.role]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(normalizedQuery);
+  });
+
   return (
     <div data-testid="admin-access-page" className="space-y-6">
       <div className="flex items-center justify-between">
@@ -59,6 +70,33 @@ export default function AdminAccess() {
         >
           <Plus size={14} /> Add Member
         </button>
+      </div>
+
+      <div className="bg-dark-700 rounded-xl border border-dark-500/50 p-4">
+        <div className="relative w-full lg:max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-500" />
+          <input
+            data-testid="admin-access-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search by email or name"
+            className="w-full rounded-xl border border-dark-500/40 bg-dark-800 py-2.5 pl-9 pr-10 text-sm text-warm-100 placeholder-warm-500 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/20"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 hover:text-warm-200"
+              aria-label="Clear access search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div className="mt-3 text-[11px] text-warm-500">
+          {filteredEntries.length} of {entries.length} admin member{entries.length !== 1 ? 's' : ''} shown
+        </div>
       </div>
 
       {showAdd && (
@@ -100,37 +138,46 @@ export default function AdminAccess() {
       )}
 
       <div className="bg-dark-700 rounded-xl border border-dark-500/50 overflow-hidden">
-        <table className="w-full" data-testid="access-table">
-          <thead>
-            <tr className="border-b border-dark-500/50">
-              <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Email</th>
-              <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Name</th>
-              <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Role</th>
-              <th className="text-right px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-dark-500/30">
-            {entries.map((e, i) => (
-              <tr key={e.email} className={i % 2 === 1 ? 'bg-dark-800/40' : ''} data-testid={`access-row-${e.email}`}>
-                <td className="px-5 py-3.5 text-sm text-warm-100">{e.email}</td>
-                <td className="px-5 py-3.5 text-xs text-warm-400">{e.name || '—'}</td>
-                <td className="px-5 py-3.5">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-accent/15 text-accent flex items-center gap-1 w-fit">
-                    <Shield size={10} /> {e.role}
-                  </span>
-                </td>
-                <td className="px-5 py-3.5 text-right">
-                  {!e.protected && (
-                    <button onClick={() => handleRemove(e.email)} className="text-warm-500 hover:text-red-400 transition-colors" data-testid={`remove-${e.email}`}>
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                  {e.protected && <span className="text-[10px] text-warm-600">Primary</span>}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full" data-testid="access-table">
+            <thead>
+              <tr className="border-b border-dark-500/50">
+                <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Email</th>
+                <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Name</th>
+                <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Role</th>
+                <th className="text-right px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-dark-500/30">
+              {filteredEntries.map((e, i) => (
+                <tr key={e.email} className={i % 2 === 1 ? 'bg-dark-800/40' : ''} data-testid={`access-row-${e.email}`}>
+                  <td className="px-5 py-3.5 text-sm text-warm-100">{e.email}</td>
+                  <td className="px-5 py-3.5 text-xs text-warm-400">{e.name || '—'}</td>
+                  <td className="px-5 py-3.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-accent/15 text-accent flex items-center gap-1 w-fit">
+                      <Shield size={10} /> {e.role}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    {!e.protected && (
+                      <button onClick={() => handleRemove(e.email)} className="text-warm-500 hover:text-red-400 transition-colors" data-testid={`remove-${e.email}`}>
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                    {e.protected && <span className="text-[10px] text-warm-600">Primary</span>}
+                  </td>
+                </tr>
+              ))}
+              {filteredEntries.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-10 text-center text-sm text-warm-500">
+                    No access entries match the current search.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="bg-dark-800 rounded-xl border border-dark-500/30 p-4">
