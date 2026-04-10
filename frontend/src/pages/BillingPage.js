@@ -4,11 +4,11 @@ import { api } from '../api';
 import { ExternalLink, CreditCard } from 'lucide-react';
 
 const statusColors = {
-  'Draft': 'bg-gray-100 text-gray-600',
-  'Sent': 'bg-blue-50 text-blue-600',
-  'Paid': 'bg-green-50 text-green-700',
-  'Overdue': 'bg-red-50 text-red-600',
-  'Cancelled': 'bg-yellow-900/10 text-yellow-800',
+  'Draft': 'bg-warm-500/15 text-warm-400',
+  'Sent': 'bg-blue-500/15 text-blue-400',
+  'Paid': 'bg-green-500/15 text-green-400',
+  'Overdue': 'bg-red-500/15 text-red-400',
+  'Cancelled': 'bg-warm-600/15 text-warm-500',
 };
 
 export default function BillingPage() {
@@ -20,83 +20,86 @@ export default function BillingPage() {
     if (!selectedProject) return;
     setLoading(true);
     api(`/api/portal/project/${selectedProject.id}/billing`)
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .then(setData).catch(console.error).finally(() => setLoading(false));
   }, [selectedProject]);
 
-  if (!selectedProject) return <div className="text-secondary text-center py-20">No project selected.</div>;
+  if (!selectedProject) return <div className="text-warm-500 text-center py-20 text-sm">No project selected.</div>;
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
     </div>
   );
-  if (!data) return <div className="text-secondary text-center py-20">Failed to load billing data.</div>;
+  if (!data) return <div className="text-warm-500 text-center py-20 text-sm">Failed to load billing data.</div>;
 
   const { invoices, summary } = data;
 
   return (
     <div data-testid="billing-page" className="space-y-6">
-      <h1 className="text-2xl font-bold text-charcoal">Billing</h1>
+      <h1 className="text-xl font-bold text-warm-50">Billing</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-6 border border-border">
-          <div className="text-sm text-secondary mb-1">Total Billed</div>
-          <div className="text-2xl font-bold text-charcoal" data-testid="total-billed">${(summary.total_billed || 0).toLocaleString()}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
+          <div className="text-xs text-warm-400 mb-1">Total Billed</div>
+          <div className="text-xl font-bold text-warm-50" data-testid="total-billed">${(summary.total_billed || 0).toLocaleString()}</div>
         </div>
-        <div className="bg-white rounded-xl p-6 border border-border">
-          <div className="text-sm text-secondary mb-1">Total Paid</div>
-          <div className="text-2xl font-bold text-green-600" data-testid="total-paid">${(summary.total_paid || 0).toLocaleString()}</div>
+        <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
+          <div className="text-xs text-warm-400 mb-1">Total Paid</div>
+          <div className="text-xl font-bold text-green-400" data-testid="total-paid">${(summary.total_paid || 0).toLocaleString()}</div>
         </div>
-        <div className="bg-white rounded-xl p-6 border border-border">
-          <div className="text-sm text-secondary mb-1">Outstanding</div>
-          <div className="text-2xl font-bold text-red-600" data-testid="outstanding">${(summary.outstanding || 0).toLocaleString()}</div>
+        <div className="bg-dark-700 rounded-xl p-5 border border-dark-500/50">
+          <div className="text-xs text-warm-400 mb-1">Outstanding</div>
+          <div className="text-xl font-bold text-accent" data-testid="outstanding">${(summary.outstanding || 0).toLocaleString()}</div>
         </div>
       </div>
 
       {invoices.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 border border-border text-center">
-          <CreditCard size={40} className="mx-auto text-secondary/40 mb-3" />
-          <p className="text-secondary">No invoices for this project.</p>
+        <div className="bg-dark-700 rounded-xl p-12 border border-dark-500/50 text-center">
+          <CreditCard size={32} className="mx-auto text-warm-600 mb-2" />
+          <p className="text-warm-500 text-sm">No invoices for this project.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="bg-dark-700 rounded-xl border border-dark-500/50 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="invoices-table">
               <thead>
-                <tr className="border-b border-border bg-oat/50">
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Invoice #</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Amount</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Status</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Due Date</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Type</th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Action</th>
+                <tr className="border-b border-dark-500/50">
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Invoice #</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Amount</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Due Date</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Issued</th>
+                  <th className="text-left px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Type</th>
+                  <th className="text-right px-5 py-3 text-[10px] font-semibold text-warm-500 uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
-                {invoices.map((inv, idx) => (
-                  <tr key={inv.id} className={idx % 2 === 1 ? 'bg-oat/30' : ''} data-testid={`invoice-${inv.id}`}>
-                    <td className="px-6 py-4 text-sm font-medium text-charcoal">{inv.no}</td>
-                    <td className="px-6 py-4 text-sm text-charcoal font-semibold">${(inv.amount || 0).toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColors[inv.payment_status] || 'bg-gray-100 text-gray-600'}`}>
-                        {inv.payment_status || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-secondary">{inv.due_date?.start || inv.due_date || '—'}</td>
-                    <td className="px-6 py-4 text-sm text-secondary">{inv.type || '—'}</td>
-                    <td className="px-6 py-4 text-right">
-                      {inv.stripe_invoice_url && inv.payment_status !== 'Paid' && (
-                        <a href={inv.stripe_invoice_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent hover:bg-accent-hover text-charcoal text-xs font-semibold rounded-lg transition-colors"
-                          data-testid={`pay-now-${inv.id}`}
-                        >
-                          Pay Now <ExternalLink size={12} />
-                        </a>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-dark-500/30">
+                {invoices.map((inv, idx) => {
+                  const displayStatus = inv.payment_status || (inv.paid ? 'Paid' : 'Draft');
+                  return (
+                    <tr key={inv.id} className={idx % 2 === 1 ? 'bg-dark-800/40' : ''} data-testid={`invoice-${inv.id}`}>
+                      <td className="px-5 py-3.5 text-sm font-medium text-warm-100">{inv.no}</td>
+                      <td className="px-5 py-3.5 text-sm text-warm-100 font-semibold">${(inv.amount || 0).toLocaleString()}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColors[displayStatus] || 'bg-warm-500/15 text-warm-400'}`}>
+                          {displayStatus}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-xs text-warm-400">{inv.due_date?.start || inv.due_date || '—'}</td>
+                      <td className="px-5 py-3.5 text-xs text-warm-400">{inv.issued_on?.start || inv.issued_on || '—'}</td>
+                      <td className="px-5 py-3.5 text-xs text-warm-400">{inv.type || '—'}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        {inv.stripe_invoice_url && displayStatus !== 'Paid' && (
+                          <a href={inv.stripe_invoice_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-accent hover:bg-accent-light text-dark-950 text-[10px] font-semibold rounded-lg transition-colors"
+                            data-testid={`pay-now-${inv.id}`}
+                          >
+                            Pay Now <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

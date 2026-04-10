@@ -6,13 +6,22 @@
 
 body {
   font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background-color: #F5F0EB;
-  color: #2D2D2D;
+  background-color: #0F0F0F;
+  color: #F5F0EB;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 6px; }
+::selection {
+  background: rgba(242,201,76,0.3);
+  color: #F5F0EB;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #828282; }
+::-webkit-scrollbar-thumb { background: #2D2D2D; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
+
+input, select, textarea {
+  color-scheme: dark;
+}

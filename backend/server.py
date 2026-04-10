@@ -99,10 +99,11 @@ def parse_page(page, prop_map):
 
 
 CLIENT_PROPS = {"name": "Company Name", "contact_person": "Contact Person", "email": "Email", "source": "Source", "status": "Status", "industry": "Industry", "stripe": "Stripe", "projects": "Project"}
-PROJECT_PROPS = {"name": "Name", "client": "Client", "status": "Status", "project_type": "Project Type", "branch": "Branch", "project_date": "Project Date", "estimated_amount": "Estimated Amount"}
-TASK_PROPS = {"name": "Name", "project": "Project", "status": "Status", "priority": "Priority", "due_date": "Due Date", "phase": "Phase", "client_visible": "Client Visible", "tag": "Tag", "notes": "Notes"}
-INVOICE_PROPS = {"no": "No", "project": "Project", "amount": "Fix cost", "paid": "Paid", "payment_status": "Payment Status", "due_date": "Due Date", "issued_on": "Issued on", "stripe_invoice_id": "Stripe Invoice ID", "stripe_invoice_url": "Stripe Invoice URL", "type": "Type"}
-MEETING_PROPS = {"name": "Name", "project": "Project", "date_time": "Date & Time", "meeting_link": "Meeting Link", "status": "Status", "client_visible": "Client Visible", "meeting_summary": "Meeting Summary", "notes": "Notes"}
+PROJECT_PROPS = {"name": "Name", "client": "Client", "status": "Status", "project_type": "Project Type", "branch": "Branch", "project_date": "Project Date"}
+PROJECT_PROPS_ADMIN = {**PROJECT_PROPS, "estimated_amount": "Estimated Amount"}
+TASK_PROPS = {"name": "Name", "project": "Project", "status": "Status", "priority": "Priority", "due_date": "Due Date", "phase": "Phase", "client_visible": "Client Visible", "tag": "Tag", "notes": "Notes", "assignee": "Assignee", "files": "Files & media"}
+INVOICE_PROPS = {"no": "No", "project": "Project", "amount": "Fix cost", "paid": "Paid", "payment_status": "Payment Status", "due_date": "Due Date", "issued_on": "Issued on", "stripe_invoice_id": "Stripe Invoice ID", "stripe_invoice_url": "Stripe Invoice URL", "type": "Type", "issued_to": "Issued to", "source": "Source", "files": "Files"}
+MEETING_PROPS = {"name": "Name", "project": "Project", "date_time": "Date & Time", "meeting_link": "Meeting Link", "status": "Status", "client_visible": "Client Visible", "meeting_summary": "Meeting Summary", "notes": "Notes", "participant": "Participant"}
 DELIVERABLE_PROPS = {"name": "Name", "project": "Project", "status": "Status", "due_date": "Due Date", "delivered_date": "Delivered Date", "description": "Description", "files": "Files", "client_visible": "Client Visible"}
 UPDATE_PROPS = {"name": "Name", "project": "Project", "date": "Date", "content": "Content", "type": "Type", "client_visible": "Client Visible"}
 PORTAL_CONFIG_PROPS = {"name": "Name", "project": "Project", "client": "Client", "portal_title": "Portal Title", "portal_intro": "Portal Intro", "contact_email": "Contact Email", "show_tasks": "Show Tasks", "show_meetings": "Show Meetings", "show_invoices": "Show Invoices", "show_deliverables": "Show Deliverables", "show_roadmap": "Show Roadmap", "show_documents": "Show Documents", "show_feedback": "Show Feedback", "cta_label": "CTA Label", "cta_url": "CTA URL", "support_contact": "Support Contact", "status": "Status"}
@@ -280,6 +281,11 @@ class SubmitRequestModel(BaseModel):
     priority: str
     description: str
 
+class AccessEmailModel(BaseModel):
+    email: str
+    role: str = "admin"
+    name: str = ""
+
 
 @app.get("/api/health")
 async def health():
@@ -291,21 +297,34 @@ async def request_magic_link(req: MagicLinkRequest):
     email = req.email.strip().lower()
     code = secrets.token_hex(3).upper()[:6]
 
-    if email == ADMIN_EMAIL:
-        await db.magic_codes.insert_one({"email": email, "code": code, "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10), "used": False})
+    # Check admin list (env + MongoDB)
+    is_admin = email == ADMIN_EMAIL
+    if not is_admin:
+        admin_entry = await db.portal_access.find_one({"email": email})
+        if admin_entry:
+            is_admin = admin_entry.get("role") == "admin"
+
+    if is_admin:
+        await db.magic_codes.insert_one({"email": email, "code": code, "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10), "used": False, "role": "admin"})
         return {"success": True, "message": "Magic link code generated. Check your email.", "mock_code": code}
 
+    # Check Notion Client DB
     clients = await notion_query("client", {"property": "Email", "rich_text": {"equals": email}})
     if not clients:
         raise HTTPException(status_code=404, detail="No account found with this email address")
 
     client_data = parse_page(clients[0], CLIENT_PROPS)
+
+    # Only allow Active clients
+    if client_data.get("status") and client_data["status"] not in ("Active",):
+        raise HTTPException(status_code=403, detail="Your account is not currently active. Please contact support.")
+
     await db.magic_codes.insert_one({
         "email": email, "code": code,
         "client_notion_id": clients[0].get("id"),
         "client_name": client_data.get("name", ""),
         "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10),
-        "used": False,
+        "used": False, "role": "client",
     })
     return {"success": True, "message": "Magic link code generated. Check your email.", "mock_code": code}
 
@@ -322,10 +341,11 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
     await db.magic_codes.update_one({"_id": magic["_id"]}, {"$set": {"used": True}})
 
     user = await db.users.find_one({"email": email})
-    is_admin = email == ADMIN_EMAIL
+    is_admin = email == ADMIN_EMAIL or magic.get("role") == "admin"
+    determined_role = "admin" if is_admin else "client"
     if not user:
         user_data = {
-            "email": email, "role": "admin" if is_admin else "client",
+            "email": email, "role": determined_role,
             "name": magic.get("client_name", email.split("@")[0]),
             "client_notion_id": magic.get("client_notion_id"),
             "created_at": datetime.now(timezone.utc),
@@ -333,6 +353,10 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
         result = await db.users.insert_one(user_data)
         user_data["_id"] = result.inserted_id
         user = user_data
+    else:
+        # Update role if it changed
+        if user.get("role") != determined_role:
+            await db.users.update_one({"_id": user["_id"]}, {"$set": {"role": determined_role}})
 
     project_ids = []
     if user.get("client_notion_id"):
@@ -418,16 +442,23 @@ async def get_dashboard(project_id: str, request: Request):
     ]}, sorts=[{"property": "Date", "direction": "descending"}])
     recent = [parse_page(u, UPDATE_PROPS) for u in updates[:5]]
 
-    invoices = await notion_query("invoice", {"property": "Project", "relation": {"contains": project_id}})
-    inv_list = [parse_page(i, INVOICE_PROPS) for i in invoices]
-    total_billed = sum(i.get("amount") or 0 for i in inv_list)
-    total_paid = sum(i.get("amount") or 0 for i in inv_list if i.get("payment_status") == "Paid" or (i.get("paid") and not i.get("payment_status")))
+    meetings_raw = await notion_query("meetings", {"and": [
+        {"property": "Project", "relation": {"contains": project_id}},
+        {"property": "Client Visible", "checkbox": {"equals": True}},
+    ]}, sorts=[{"property": "Date & Time", "direction": "ascending"}])
+    now_iso = datetime.now(timezone.utc).isoformat()
+    upcoming_meetings = []
+    for m in meetings_raw:
+        parsed_m = parse_page(m, MEETING_PROPS)
+        dt = parsed_m.get("date_time")
+        if dt and isinstance(dt, dict) and dt.get("start") and dt["start"] >= now_iso and parsed_m.get("status") not in ("Cancelled", "Completed"):
+            upcoming_meetings.append(parsed_m)
+    upcoming_meetings = upcoming_meetings[:3]
 
     return {
-        "project": project, "recent_updates": recent,
+        "project": project, "recent_updates": recent, "upcoming_meetings": upcoming_meetings,
         "metrics": {"tasks_completed": completed_tasks, "tasks_total": total_tasks,
-                     "deliverables_delivered": delivered, "deliverables_total": total_del,
-                     "total_billed": total_billed, "total_paid": total_paid, "outstanding": total_billed - total_paid},
+                     "deliverables_delivered": delivered, "deliverables_total": total_del},
     }
 
 
@@ -531,7 +562,7 @@ async def admin_projects(request: Request):
     user = await get_current_user(request)
     require_admin(user)
     pages = await notion_query("project")
-    projects = [parse_page(p, PROJECT_PROPS) for p in pages]
+    projects = [parse_page(p, PROJECT_PROPS_ADMIN) for p in pages]
     clients_pages = await notion_query("client")
     client_map = {c.get("id"): parse_page(c, CLIENT_PROPS).get("name", "") for c in clients_pages}
     for proj in projects:
@@ -574,3 +605,40 @@ async def invalidate_cache(request: Request):
     require_admin(user)
     cache.invalidate()
     return {"success": True, "message": "Cache invalidated"}
+
+
+@app.get("/api/admin/access")
+async def get_access_list(request: Request):
+    user = await get_current_user(request)
+    require_admin(user)
+    entries = []
+    async for doc in db.portal_access.find({}, {"_id": 0}):
+        entries.append(doc)
+    # Include primary admin
+    entries.insert(0, {"email": ADMIN_EMAIL, "role": "admin", "name": "Primary Admin", "protected": True})
+    return entries
+
+
+@app.post("/api/admin/access")
+async def add_access(req: AccessEmailModel, request: Request):
+    user = await get_current_user(request)
+    require_admin(user)
+    email = req.email.strip().lower()
+    existing = await db.portal_access.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already in access list")
+    await db.portal_access.insert_one({"email": email, "role": req.role, "name": req.name, "created_at": datetime.now(timezone.utc).isoformat()})
+    return {"success": True}
+
+
+@app.delete("/api/admin/access/{email}")
+async def remove_access(email: str, request: Request):
+    user = await get_current_user(request)
+    require_admin(user)
+    email = email.strip().lower()
+    if email == ADMIN_EMAIL:
+        raise HTTPException(status_code=400, detail="Cannot remove primary admin")
+    result = await db.portal_access.delete_one({"email": email})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Email not found")
+    return {"success": True}

@@ -20,8 +20,7 @@ export default function RequestPage() {
     setError('');
     try {
       await api(`/api/portal/project/${selectedProject.id}/requests`, {
-        method: 'POST',
-        body: JSON.stringify(form),
+        method: 'POST', body: JSON.stringify(form),
       });
       setSuccess(true);
       setForm({ name: '', type: 'Question', priority: 'Medium', description: '' });
@@ -32,61 +31,53 @@ export default function RequestPage() {
     }
   };
 
-  if (!selectedProject) return <div className="text-secondary text-center py-20">No project selected.</div>;
+  if (!selectedProject) return <div className="text-warm-500 text-center py-20 text-sm">No project selected.</div>;
 
   if (success) return (
     <div data-testid="request-success" className="max-w-lg mx-auto text-center py-20">
-      <CheckCircle2 size={48} className="mx-auto text-green-500 mb-4" />
-      <h2 className="text-xl font-bold text-charcoal mb-2">Request Submitted</h2>
-      <p className="text-body mb-6">Your request has been submitted successfully. We'll get back to you soon.</p>
-      <button
-        onClick={() => setSuccess(false)}
-        className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-charcoal font-semibold rounded-xl text-sm transition-colors"
+      <CheckCircle2 size={40} className="mx-auto text-green-400 mb-3" />
+      <h2 className="text-lg font-bold text-warm-50 mb-2">Request Submitted</h2>
+      <p className="text-warm-400 text-sm mb-5">We'll get back to you soon.</p>
+      <button onClick={() => setSuccess(false)}
+        className="px-5 py-2 bg-accent hover:bg-accent-light text-dark-950 font-semibold rounded-xl text-sm transition-colors"
         data-testid="submit-another-button"
       >
-        Submit Another Request
+        Submit Another
       </button>
     </div>
   );
 
   return (
     <div data-testid="request-page" className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-charcoal mb-1">Submit a Request</h1>
-      <p className="text-secondary text-sm mb-6">Have a question, feedback, or need a change? Let us know.</p>
+      <h1 className="text-xl font-bold text-warm-50 mb-1">Submit a Request</h1>
+      <p className="text-warm-400 text-xs mb-5">Have a question, feedback, or need a change?</p>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-border p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-dark-700 rounded-xl border border-dark-500/50 p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Subject</label>
+          <label className="block text-xs font-medium text-warm-200 mb-1">Subject</label>
           <input
-            data-testid="request-name"
-            type="text"
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            required
-            placeholder="Brief summary of your request"
-            className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-charcoal placeholder-secondary/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+            data-testid="request-name" type="text" value={form.name}
+            onChange={e => setForm({ ...form, name: e.target.value })} required
+            placeholder="Brief summary"
+            className="w-full px-3.5 py-2.5 bg-dark-800 border border-dark-400 rounded-xl text-sm text-warm-50 placeholder-warm-500 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-charcoal mb-1.5">Type</label>
-            <select
-              data-testid="request-type"
-              value={form.type}
+            <label className="block text-xs font-medium text-warm-200 mb-1">Type</label>
+            <select data-testid="request-type" value={form.type}
               onChange={e => setForm({ ...form, type: e.target.value })}
-              className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-charcoal focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-white"
+              className="w-full px-3.5 py-2.5 bg-dark-800 border border-dark-400 rounded-xl text-sm text-warm-50 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30"
             >
               {types.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-charcoal mb-1.5">Priority</label>
-            <select
-              data-testid="request-priority"
-              value={form.priority}
+            <label className="block text-xs font-medium text-warm-200 mb-1">Priority</label>
+            <select data-testid="request-priority" value={form.priority}
               onChange={e => setForm({ ...form, priority: e.target.value })}
-              className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-charcoal focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent bg-white"
+              className="w-full px-3.5 py-2.5 bg-dark-800 border border-dark-400 rounded-xl text-sm text-warm-50 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30"
             >
               {priorities.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -94,28 +85,21 @@ export default function RequestPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Description</label>
+          <label className="block text-xs font-medium text-warm-200 mb-1">Description</label>
           <textarea
-            data-testid="request-description"
-            value={form.description}
-            onChange={e => setForm({ ...form, description: e.target.value })}
-            required
-            rows={5}
-            placeholder="Describe your request in detail..."
-            className="w-full px-4 py-2.5 border border-border rounded-xl text-sm text-charcoal placeholder-secondary/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent resize-none"
+            data-testid="request-description" value={form.description}
+            onChange={e => setForm({ ...form, description: e.target.value })} required rows={5}
+            placeholder="Describe in detail..."
+            className="w-full px-3.5 py-2.5 bg-dark-800 border border-dark-400 rounded-xl text-sm text-warm-50 placeholder-warm-500 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 resize-none"
           />
         </div>
 
-        {error && <p data-testid="request-error" className="text-red-500 text-sm">{error}</p>}
+        {error && <p data-testid="request-error" className="text-red-400 text-xs">{error}</p>}
 
-        <button
-          data-testid="submit-request-button"
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 px-6 py-2.5 bg-accent hover:bg-accent-hover text-charcoal font-semibold rounded-xl text-sm transition-colors disabled:opacity-50"
+        <button data-testid="submit-request-button" type="submit" disabled={loading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-light text-dark-950 font-semibold rounded-xl text-sm transition-colors disabled:opacity-50"
         >
-          <Send size={16} />
-          {loading ? 'Submitting...' : 'Submit Request'}
+          <Send size={14} /> {loading ? 'Submitting...' : 'Submit Request'}
         </button>
       </form>
     </div>

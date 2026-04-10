@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/projects" replace />;
 
   const handleEmail = async (e) => {
     e.preventDefault();
@@ -50,19 +50,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-oat flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-dark-950 flex items-center justify-center p-4">
+      <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/logo-light.png" alt="ES" className="w-16 h-16 mx-auto mb-4 rounded-xl" />
-          <h1 className="text-2xl font-bold text-charcoal tracking-tight">Erick Sixto</h1>
-          <p className="text-secondary text-sm mt-1">Customer Portal</p>
+          <img src="/logo-dark.png" alt="ES" className="w-14 h-14 mx-auto mb-4 rounded-xl" />
+          <h1 className="text-xl font-bold text-warm-50 tracking-tight">Erick Sixto</h1>
+          <p className="text-warm-500 text-xs mt-1 uppercase tracking-widest">Customer Portal</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 border border-border" data-testid="login-form">
+        <div className="bg-dark-800 rounded-2xl p-7 border border-dark-500/50" data-testid="login-form">
           {step === 'email' ? (
             <>
-              <h2 className="text-lg font-semibold text-charcoal mb-1">Sign in</h2>
-              <p className="text-secondary text-sm mb-6">Enter your email to receive a login code</p>
+              <h2 className="text-base font-semibold text-warm-50 mb-1">Sign in</h2>
+              <p className="text-warm-400 text-xs mb-5">Enter your email to receive a login code</p>
               <form onSubmit={handleEmail}>
                 <input
                   data-testid="email-input"
@@ -71,34 +71,34 @@ export default function LoginPage() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="w-full px-4 py-3 border border-border rounded-xl text-charcoal placeholder-secondary/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm"
+                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-400 rounded-xl text-warm-50 placeholder-warm-500 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 text-sm"
                 />
-                {error && <p data-testid="login-error" className="text-red-500 text-sm mt-2">{error}</p>}
+                {error && <p data-testid="login-error" className="text-red-400 text-xs mt-2">{error}</p>}
                 <button
                   data-testid="request-code-button"
                   type="submit"
                   disabled={loading}
-                  className="w-full mt-4 px-4 py-3 bg-accent hover:bg-accent-hover text-charcoal font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                  className="w-full mt-4 px-4 py-2.5 bg-accent hover:bg-accent-light text-dark-950 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50"
                 >
                   {loading ? 'Sending...' : 'Continue'}
-                  {!loading && <ArrowRight size={16} />}
+                  {!loading && <ArrowRight size={15} />}
                 </button>
               </form>
             </>
           ) : (
             <>
-              <h2 className="text-lg font-semibold text-charcoal mb-1">Enter your code</h2>
-              <p className="text-secondary text-sm mb-4">We sent a 6-digit code to <span className="font-medium text-charcoal">{email}</span></p>
+              <h2 className="text-base font-semibold text-warm-50 mb-1">Enter your code</h2>
+              <p className="text-warm-400 text-xs mb-4">Sent to <span className="text-warm-100">{email}</span></p>
 
               {mockCode && (
-                <div className="bg-oat border border-accent/30 rounded-xl p-4 mb-4" data-testid="mock-code-display">
+                <div className="bg-accent/8 border border-accent/20 rounded-xl p-3.5 mb-4" data-testid="mock-code-display">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs text-secondary mb-1">Demo Mode - Your code:</div>
-                      <div className="text-2xl font-mono font-bold text-charcoal tracking-widest">{mockCode}</div>
+                      <div className="text-[10px] text-warm-400 mb-0.5 uppercase tracking-wider">Demo Code</div>
+                      <div className="text-xl font-mono font-bold text-accent tracking-[0.2em]">{mockCode}</div>
                     </div>
-                    <button onClick={copyCode} className="p-2 hover:bg-white rounded-lg transition-colors" data-testid="copy-code-button">
-                      {copied ? <Check size={18} className="text-green-600" /> : <Copy size={18} className="text-secondary" />}
+                    <button onClick={copyCode} className="p-1.5 hover:bg-accent/10 rounded-lg transition-colors" data-testid="copy-code-button">
+                      {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-warm-400" />}
                     </button>
                   </div>
                 </div>
@@ -110,17 +110,17 @@ export default function LoginPage() {
                   type="text"
                   value={code}
                   onChange={e => setCode(e.target.value.toUpperCase())}
-                  placeholder="Enter 6-digit code"
+                  placeholder="6-digit code"
                   maxLength={6}
                   required
-                  className="w-full px-4 py-3 border border-border rounded-xl text-charcoal placeholder-secondary/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-sm text-center tracking-widest font-mono text-lg"
+                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-400 rounded-xl text-warm-50 placeholder-warm-500 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 text-sm text-center tracking-[0.3em] font-mono"
                 />
-                {error && <p data-testid="verify-error" className="text-red-500 text-sm mt-2">{error}</p>}
+                {error && <p data-testid="verify-error" className="text-red-400 text-xs mt-2">{error}</p>}
                 <button
                   data-testid="verify-code-button"
                   type="submit"
                   disabled={loading}
-                  className="w-full mt-4 px-4 py-3 bg-accent hover:bg-accent-hover text-charcoal font-semibold rounded-xl transition-colors text-sm disabled:opacity-50"
+                  className="w-full mt-4 px-4 py-2.5 bg-accent hover:bg-accent-light text-dark-950 font-semibold rounded-xl transition-colors text-sm disabled:opacity-50"
                 >
                   {loading ? 'Verifying...' : 'Sign In'}
                 </button>
@@ -129,7 +129,7 @@ export default function LoginPage() {
               <button
                 data-testid="back-to-email"
                 onClick={() => { setStep('email'); setError(''); setMockCode(''); setCode(''); }}
-                className="w-full mt-3 text-sm text-secondary hover:text-charcoal transition-colors"
+                className="w-full mt-3 text-xs text-warm-500 hover:text-warm-200 transition-colors"
               >
                 Use a different email
               </button>
@@ -137,8 +137,8 @@ export default function LoginPage() {
           )}
         </div>
 
-        <p className="text-center text-xs text-secondary mt-6">
-          Erick Sixto | Salesforce Specialist
+        <p className="text-center text-[10px] text-warm-600 mt-6 uppercase tracking-widest">
+          Salesforce Specialist
         </p>
       </div>
     </div>
