@@ -2,6 +2,8 @@
 
 All databases live under **Freelancer OS → Shared Database** in Notion.
 
+Shared Database page ID: `30dec4c7-cb79-8109-a189-d1c755167c53`
+
 ## Database IDs (Data Source / Collection IDs)
 
 | Database | Collection ID |
@@ -18,6 +20,8 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Updates | `be9d5735-853b-45fb-adb0-b5955ed6de8a` |
 | Portal Config | `023e9656-73e9-41d5-a531-0a6215e59aa3` |
 | Requests | `936d54e8-1dd2-4c3c-b57f-e5f5239924e3` |
+| Portal Users | `29f4d51e-acd4-44f7-8ec5-0586d20f3e55` |
+| Portal Documents | `6422e295-ecc9-4a96-8c31-5a312e3586bd` |
 
 ## Property Reference
 
@@ -35,6 +39,12 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Proposal | Relation → Proposal | |
 | Portal Config | Relation → Portal Config | |
 | Requests | Relation → Requests | |
+| Portal Users | Relation ← Portal Users | Reverse relation from portal identities |
+| Portal Documents | Relation ← Portal Documents | Reverse relation from client-facing documents |
+| Primary Portal Contact | Relation → Portal Users | Preferred portal contact |
+| Billing Contact | Email | Billing destination or finance contact |
+| Timezone | Text | Client operating timezone |
+| Portal Notes | Text | Internal notes for portal setup and support |
 
 ### Project
 | Property | Type | Notes |
@@ -55,6 +65,12 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Updates | Relation → Updates | |
 | Portal Config | Relation → Portal Config | |
 | Requests | Relation → Requests | |
+| Portal Members | Relation ← Portal Users | Reverse relation from accessible portal users |
+| Portal Documents | Relation ← Portal Documents | Reverse relation from client-facing documents |
+| Project Health | Select | On Track, At Risk, Blocked, Completed |
+| Client-Facing Summary | Text | Overview copy for the portal |
+| Primary Owner | People | Internal owner accountable for the project |
+| Last Update Published At | Date | Most recent published client update |
 
 ### Task
 | Property | Type | Notes |
@@ -69,6 +85,10 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Assignee | People | |
 | Notes | Text | |
 | Tag | Select | Research, Configuration, Development, Communication, Support, Others |
+| Customer Action Needed | Checkbox | Surfaces work blocked on the client |
+| Blocked Reason | Text | Explanation for blocked tasks |
+| Client-Facing Notes | Text | UI-safe notes shown in the portal |
+| Sort Order | Number | Stable ordering within the portal |
 
 ### Invoice
 | Property | Type | Notes |
@@ -84,6 +104,10 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Type | Select | Fixed rate, Hourly rate, Fiverr Order |
 | Stripe Invoice ID | Text | Stripe `in_...` reference |
 | Stripe Invoice URL | URL | Hosted payment page |
+| Paid Date | Date | Date payment cleared |
+| Billing Period | Text | Human-readable covered period |
+| Balance Due | Number (dollar) | Remaining amount owed |
+| Source Last Synced At | Date | Last successful sync timestamp |
 
 ### Meetings
 | Property | Type | Notes |
@@ -97,6 +121,10 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Participant | Text | |
 | Meeting Summary | Text | |
 | Notes | Text | |
+| Meeting Type | Select | Kickoff, Weekly Sync, Review, Workshop, Support, Other |
+| Agenda | Text | Agenda or pre-read summary |
+| Outcome | Text | Main outcome or conclusion |
+| Recording URL | URL | Recording or replay link |
 
 ### Deliverables
 | Property | Type | Notes |
@@ -109,6 +137,10 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Description | Text | |
 | Files | Files | |
 | Client Visible | Checkbox | Portal display filter |
+| Category | Select | Guide, Report, Asset, Handoff, Reference |
+| Version | Text | Version label for handoffs |
+| Approved By | Text | Approver name or team |
+| Sort Order | Number | Stable ordering within the portal |
 
 ### Updates
 | Property | Type | Notes |
@@ -119,6 +151,11 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Content | Text | |
 | Type | Select | Status Update, Milestone, Announcement, Request |
 | Client Visible | Checkbox | Portal display filter |
+| Author | People | Internal author of the update |
+| Pinned | Checkbox | Elevates important updates in the portal |
+| Excerpt | Text | Short preview copy for cards |
+| CTA Label | Text | Optional call-to-action label |
+| CTA URL | URL | Optional call-to-action destination |
 
 ### Portal Config
 | Property | Type | Notes |
@@ -140,6 +177,10 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | CTA URL | URL | Primary action link |
 | Support Contact | Text | |
 | Status | Select | Draft, Active, Archived |
+| Default Landing Tab | Select | Overview, Tasks, Deliverables, Documents, Meetings, Updates, Request |
+| Support SLA Text | Text | Client-facing support expectations |
+| Escalation Contact | Text | Escalation destination for support |
+| Welcome Checklist Enabled | Checkbox | Enables first-visit onboarding guidance |
 
 ### Requests
 | Property | Type | Notes |
@@ -152,3 +193,37 @@ All databases live under **Freelancer OS → Shared Database** in Notion.
 | Description | Text | |
 | Status | Select | New, In Review, Resolved, Closed |
 | Date | Date | Submission date |
+| Assigned To | People | Internal request owner |
+| Requester Email | Email | Email captured at submission time |
+| Client-Facing Status | Select | Received, Planned, In Progress, Delivered, Closed |
+| Target Response Date | Date | SLA or promised response date |
+| Resolved Date | Date | When the request was fully resolved |
+
+### Portal Users
+| Property | Type | Notes |
+|----------|------|-------|
+| Name | Title | Portal identity name |
+| Email | Email | Login identity email |
+| Status | Select | Active, Invited, Disabled |
+| Role | Select | Client, Admin, Internal |
+| Client | Relation → Client | Home client account |
+| Accessible Projects | Relation → Project | Projects this user can access |
+| Default Project | Relation → Project | Default landing project |
+| Access Scope | Select | Client-wide or project-specific |
+| Last Login At | Date | Latest successful sign-in |
+| Notes | Text | Internal access notes |
+
+### Portal Documents
+| Property | Type | Notes |
+|----------|------|-------|
+| Name | Title | Client-facing document title |
+| Project | Relation → Project | Owning project |
+| Client | Relation → Client | Owning client |
+| Category | Select | Guide, Report, Proposal, Contract, Asset, Reference |
+| Summary | Text | Portal card summary |
+| Files | Files | Attached deliverables or docs |
+| External URL | URL | External destination if hosted elsewhere |
+| Client Visible | Checkbox | Portal display filter |
+| Sort Order | Number | Stable ordering in the documents view |
+| Status | Select | Draft, Published, Archived |
+| Published At | Date | Publish timestamp for client visibility |

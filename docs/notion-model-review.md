@@ -361,3 +361,103 @@ Why:
 The current schema is enough to keep building, but the next quality step is to shift from “records that happen to power a portal” to “entities intentionally designed for a client experience.”
 
 The most valuable model change is a real access model. The most valuable content-model change is a real documents entity. The most valuable experience-model change is a milestone layer plus standardized metadata across every client-facing record.
+
+---
+
+## Implemented Now
+
+The following schema changes have now been applied live in Notion to strengthen the portal model without adding external dependencies.
+
+### New Entities Added
+
+- `Portal Users`
+- `Portal Documents`
+
+### New Relationships Added
+
+- `Portal Users.Client` → `Client`
+- `Portal Users.Accessible Projects` → `Project`
+- reverse relation on `Client`: `Portal Users`
+- reverse relation on `Project`: `Portal Members`
+- `Portal Documents.Client` → `Client`
+- `Portal Documents.Project` → `Project`
+- reverse relation on `Client`: `Portal Documents`
+- reverse relation on `Project`: `Portal Documents`
+
+### Fields Added to Existing Databases
+
+Client:
+
+- `Primary Portal Contact`
+- `Billing Contact`
+- `Timezone`
+- `Portal Notes`
+
+Project:
+
+- `Project Health`
+- `Client-Facing Summary`
+- `Primary Owner`
+- `Last Update Published At`
+
+Task:
+
+- `Customer Action Needed`
+- `Blocked Reason`
+- `Client-Facing Notes`
+- `Sort Order`
+
+Deliverables:
+
+- `Category`
+- `Version`
+- `Approved By`
+- `Sort Order`
+
+Meetings:
+
+- `Meeting Type`
+- `Agenda`
+- `Outcome`
+- `Recording URL`
+
+Updates:
+
+- `Author`
+- `Pinned`
+- `Excerpt`
+- `CTA Label`
+- `CTA URL`
+
+Portal Config:
+
+- `Default Landing Tab`
+- `Support SLA Text`
+- `Escalation Contact`
+- `Welcome Checklist Enabled`
+
+Requests:
+
+- `Assigned To`
+- `Requester Email`
+- `Client-Facing Status`
+- `Target Response Date`
+- `Resolved Date`
+
+Invoice:
+
+- `Paid Date`
+- `Billing Period`
+- `Balance Due`
+- `Source Last Synced At`
+
+### What This Unlocks
+
+- multiple portal contacts per client without relying on a single `Client.Email`
+- a real documents surface for guides, handoff materials, and reference assets
+- better customer-facing project storytelling via `Project Health`, summaries, pinned updates, and clearer request states
+- cleaner portal UX with explicit sort order, publish timing, and support metadata
+
+### Recommended Next Model Step
+
+The next highest-value addition is still a dedicated `Milestone` entity. The access model is now much healthier, and milestones would make the customer experience more legible by giving the portal a true progress narrative instead of deriving it from tasks, meetings, and updates alone.
