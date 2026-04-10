@@ -25,6 +25,7 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "sixto.developer@gmail.com")
 NOTION_API_KEY = os.environ.get("NOTION_API_KEY", "")
 NOTION_VERSION = "2022-06-28"
 NOTION_BASE = "https://api.notion.com/v1"
+AUTH_DEBUG_CODES = os.environ.get("AUTH_DEBUG_CODES", "").strip().lower() in ("1", "true", "yes", "on")
 
 NOTION_DB = {
     "client": "30dec4c7-cb79-81db-810d-e5831e7f56b7",
@@ -477,7 +478,10 @@ async def request_magic_link(req: MagicLinkRequest):
         "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10),
         "used": False,
     })
-    return {"success": True, "message": "Magic link code generated. Check your email.", "mock_code": code}
+    response = {"success": True, "message": "Magic link code generated. Check your email."}
+    if AUTH_DEBUG_CODES:
+        response["mock_code"] = code
+    return response
 
 
 @app.post("/api/auth/verify-magic-link")
@@ -493,12 +497,12 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
 
     user = await db.users.find_one({"email": email})
     determined_role = magic.get("role", "client")
-    resolved_client_notion_id = magic.get("client_notion_id") or (user.get("client_notion_id") if user else None)
-    resolved_project_ids = magic.get("project_ids") or (user.get("project_ids") if user else []) or []
-    resolved_default_project_id = magic.get("default_project_id") or (user.get("default_project_id") if user else None)
-    resolved_access_scope = magic.get("access_scope") or (user.get("access_scope") if user else None)
-    resolved_portal_user_notion_id = magic.get("portal_user_notion_id") or (user.get("portal_user_notion_id") if user else None)
-    resolved_notion_role = magic.get("notion_role") or (user.get("notion_role") if user else None)
+    resolved_client_notion_id = magic["client_notion_id"] if "client_notion_id" in magic else (user.get("client_notion_id") if user else None)
+    resolved_project_ids = magic["project_ids"] if "project_ids" in magic else ((user.get("project_ids") if user else []) or [])
+    resolved_default_project_id = magic["default_project_id"] if "default_project_id" in magic else (user.get("default_project_id") if user else None)
+    resolved_access_scope = magic["access_scope"] if "access_scope" in magic else (user.get("access_scope") if user else None)
+    resolved_portal_user_notion_id = magic["portal_user_notion_id"] if "portal_user_notion_id" in magic else (user.get("portal_user_notion_id") if user else None)
+    resolved_notion_role = magic["notion_role"] if "notion_role" in magic else (user.get("notion_role") if user else None)
 
     if not user:
         user_data = {
@@ -520,17 +524,17 @@ async def verify_magic_link(req: VerifyCodeRequest, response: Response):
         updates = {}
         if user.get("role") != determined_role:
             updates["role"] = determined_role
-        if resolved_client_notion_id and user.get("client_notion_id") != resolved_client_notion_id:
+        if user.get("client_notion_id") != resolved_client_notion_id:
             updates["client_notion_id"] = resolved_client_notion_id
         if user.get("project_ids", []) != resolved_project_ids:
             updates["project_ids"] = resolved_project_ids
-        if resolved_default_project_id and user.get("default_project_id") != resolved_default_project_id:
+        if user.get("default_project_id") != resolved_default_project_id:
             updates["default_project_id"] = resolved_default_project_id
-        if resolved_access_scope and user.get("access_scope") != resolved_access_scope:
+        if user.get("access_scope") != resolved_access_scope:
             updates["access_scope"] = resolved_access_scope
-        if resolved_portal_user_notion_id and user.get("portal_user_notion_id") != resolved_portal_user_notion_id:
+        if user.get("portal_user_notion_id") != resolved_portal_user_notion_id:
             updates["portal_user_notion_id"] = resolved_portal_user_notion_id
-        if resolved_notion_role and user.get("notion_role") != resolved_notion_role:
+        if user.get("notion_role") != resolved_notion_role:
             updates["notion_role"] = resolved_notion_role
         if updates:
             await db.users.update_one({"_id": user["_id"]}, {"$set": updates})

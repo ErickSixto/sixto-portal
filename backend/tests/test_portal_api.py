@@ -13,6 +13,18 @@ ADMIN_EMAIL = "sixto.developer@gmail.com"
 CLIENT_EMAIL = "arman@bluegateinc.com"
 
 
+def request_debug_code(email):
+    response = requests.post(
+        f"{BASE_URL}/api/auth/request-magic-link",
+        json={"email": email}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    if "mock_code" not in data:
+        pytest.skip("Debug auth code responses are disabled for this environment")
+    return data["mock_code"]
+
+
 class TestHealthAndAuth:
     """Health check and authentication tests"""
     
@@ -27,29 +39,15 @@ class TestHealthAndAuth:
     
     def test_admin_magic_link_request(self):
         """Test admin can request magic link"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/request-magic-link",
-            json={"email": ADMIN_EMAIL}
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] == True
-        assert "mock_code" in data  # MOCKED - code returned in response
-        print(f"✓ Admin magic link request passed, mock_code: {data['mock_code']}")
-        return data["mock_code"]
+        mock_code = request_debug_code(ADMIN_EMAIL)
+        print(f"✓ Admin magic link request passed, mock_code: {mock_code}")
+        return mock_code
     
     def test_client_magic_link_request(self):
         """Test client can request magic link"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/request-magic-link",
-            json={"email": CLIENT_EMAIL}
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] == True
-        assert "mock_code" in data
-        print(f"✓ Client magic link request passed, mock_code: {data['mock_code']}")
-        return data["mock_code"]
+        mock_code = request_debug_code(CLIENT_EMAIL)
+        print(f"✓ Client magic link request passed, mock_code: {mock_code}")
+        return mock_code
     
     def test_invalid_email_magic_link(self):
         """Test invalid email returns 404"""
@@ -62,12 +60,7 @@ class TestHealthAndAuth:
     
     def test_admin_verify_magic_link(self):
         """Test admin can verify magic link and get token"""
-        # First request code
-        req_response = requests.post(
-            f"{BASE_URL}/api/auth/request-magic-link",
-            json={"email": ADMIN_EMAIL}
-        )
-        mock_code = req_response.json()["mock_code"]
+        mock_code = request_debug_code(ADMIN_EMAIL)
         
         # Verify code
         response = requests.post(
@@ -88,12 +81,7 @@ class TestHealthAndAuth:
     
     def test_client_verify_magic_link(self):
         """Test client can verify magic link and get token"""
-        # First request code
-        req_response = requests.post(
-            f"{BASE_URL}/api/auth/request-magic-link",
-            json={"email": CLIENT_EMAIL}
-        )
-        mock_code = req_response.json()["mock_code"]
+        mock_code = request_debug_code(CLIENT_EMAIL)
         
         # Verify code
         response = requests.post(
@@ -116,11 +104,7 @@ class TestHealthAndAuth:
 @pytest.fixture
 def admin_token():
     """Get admin authentication token"""
-    req_response = requests.post(
-        f"{BASE_URL}/api/auth/request-magic-link",
-        json={"email": ADMIN_EMAIL}
-    )
-    mock_code = req_response.json()["mock_code"]
+    mock_code = request_debug_code(ADMIN_EMAIL)
     response = requests.post(
         f"{BASE_URL}/api/auth/verify-magic-link",
         json={"email": ADMIN_EMAIL, "code": mock_code}
@@ -131,11 +115,7 @@ def admin_token():
 @pytest.fixture
 def client_token():
     """Get client authentication token"""
-    req_response = requests.post(
-        f"{BASE_URL}/api/auth/request-magic-link",
-        json={"email": CLIENT_EMAIL}
-    )
-    mock_code = req_response.json()["mock_code"]
+    mock_code = request_debug_code(CLIENT_EMAIL)
     response = requests.post(
         f"{BASE_URL}/api/auth/verify-magic-link",
         json={"email": CLIENT_EMAIL, "code": mock_code}

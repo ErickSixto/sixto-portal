@@ -178,7 +178,7 @@ export default function AdminAccess() {
       <div className="bg-dark-800 rounded-xl border border-dark-500/30 p-4">
         <p className="text-xs text-warm-500 leading-relaxed">
           <strong className="text-warm-300">Note:</strong> Admin members added here can log in with their email using the magic link flow. 
-          Client access is managed through your Notion Client database — any email in the Client DB with "Active" status can log in as a client.
+          Client access is managed primarily through the `Portal Users` Notion database, with the legacy Client database only acting as a fallback for older records.
         </p>
       </div>
     </div>
