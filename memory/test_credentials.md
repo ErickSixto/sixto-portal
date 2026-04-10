@@ -1,24 +1,16 @@
 # Test Credentials
 
-## Admin User
-- **Email:** sixto.developer@gmail.com
-- **Role:** admin
-- **Auth Method:** Magic Link (mock - code displayed on screen)
+## Admin
+- Email: `sixto.developer@gmail.com`
+- Role: admin
+- Auth: Magic link (MOCKED - code displayed in UI/API response)
 
-## Auth Flow
-1. Go to /login
-2. Enter email
-3. Click "Continue"
-4. Copy the 6-digit code from "Demo Mode" display
-5. Paste code and click "Sign In"
+## Client
+- Email: `arman@bluegateinc.com`
+- Role: client
+- Auth: Magic link (MOCKED - code displayed in UI/API response)
 
-## Auth Endpoints
-- POST /api/auth/request-magic-link - body: {"email": "..."}
-- POST /api/auth/verify-magic-link - body: {"email": "...", "code": "..."}
-- GET /api/auth/me - requires auth
-- POST /api/auth/logout
-
-## Notes
-- Magic links are MOCKED (code shown in UI, no email sent)
-- JWT tokens stored in httpOnly cookies + Authorization Bearer header
-- Notion API key not yet configured (data will be empty)
+## Auth Notes
+- Magic link codes are returned in the API response (`mock_code` field) and displayed in the UI
+- Codes expire after 10 minutes
+- No real email sending is configured yet
